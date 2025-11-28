@@ -10,13 +10,15 @@ import { OrdersStackParamList } from "@/navigation/OrdersStackNavigator";
 import {
   getOrders,
   getCustomers,
+  getEmployees,
   addOrder,
   updateOrder,
   updateCustomerBalance,
+  assignEmployeeToOrder,
   generateId,
   formatCurrency,
 } from "@/utils/storage";
-import { Order, Customer, OrderItem } from "@/types";
+import { Order, Customer, OrderItem, Employee } from "@/types";
 
 export default function AddOrderScreen() {
   const { theme } = useTheme();
@@ -26,7 +28,9 @@ export default function AddOrderScreen() {
   const isEditing = !!orderId;
 
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -37,6 +41,7 @@ export default function AddOrderScreen() {
   const [newItemQty, setNewItemQty] = useState("1");
   const [loading, setLoading] = useState(false);
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
+  const [showEmployeePicker, setShowEmployeePicker] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -45,6 +50,9 @@ export default function AddOrderScreen() {
   const loadData = async () => {
     const customerData = await getCustomers();
     setCustomers(customerData);
+    
+    const employeeData = await getEmployees();
+    setEmployees(employeeData.filter(e => e.isActive));
 
     if (orderId) {
       const orders = await getOrders();
@@ -55,6 +63,7 @@ export default function AddOrderScreen() {
         setDueDate(order.dueDate.split("T")[0]);
         setNotes(order.notes || "");
         setItems(order.items);
+        setSelectedEmployeeId(order.assignedEmployeeId || "");
         if (order.items.length === 0) {
           setManualAmount(order.amount.toString());
         }
@@ -144,16 +153,21 @@ export default function AddOrderScreen() {
             createdAt: existing.createdAt,
             completedAt: existing.completedAt,
             deliveredAt: existing.deliveredAt,
-            assignedEmployeeId: existing.assignedEmployeeId,
+            assignedEmployeeId: selectedEmployeeId || undefined,
             notes: notes.trim() || undefined,
             items,
           };
           await updateOrder(order);
           await updateCustomerBalance(selectedCustomerId);
+          
+          if (selectedEmployeeId && selectedEmployeeId !== existing.assignedEmployeeId) {
+            await assignEmployeeToOrder(order.id, selectedEmployeeId);
+          }
         }
       } else {
+        const newOrderId = generateId();
         const order: Order = {
-          id: generateId(),
+          id: newOrderId,
           customerId: selectedCustomerId,
           customerName: selectedCustomer.name,
           description: description.trim(),
@@ -162,11 +176,16 @@ export default function AddOrderScreen() {
           paidAmount: 0,
           dueDate: new Date(dueDate).toISOString(),
           createdAt: new Date().toISOString(),
+          assignedEmployeeId: selectedEmployeeId || undefined,
           notes: notes.trim() || undefined,
           items,
         };
         await addOrder(order);
         await updateCustomerBalance(selectedCustomerId);
+        
+        if (selectedEmployeeId) {
+          await assignEmployeeToOrder(newOrderId, selectedEmployeeId);
+        }
       }
 
       navigation.goBack();
@@ -235,6 +254,85 @@ export default function AddOrderScreen() {
                 </ThemedText>
               </Pressable>
             ))
+          )}
+        </View>
+      ) : null}
+
+      <ThemedText type="h4" style={styles.sectionTitle}>
+        Assign Tailor
+      </ThemedText>
+      <Pressable
+        style={[styles.customerPicker, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}
+        onPress={() => setShowEmployeePicker(!showEmployeePicker)}
+      >
+        {selectedEmployeeId ? (
+          <View style={styles.selectedCustomer}>
+            <View style={[styles.avatar, { backgroundColor: theme.accent + "20" }]}>
+              <ThemedText type="body" style={{ color: theme.accent }}>
+                {employees.find(e => e.id === selectedEmployeeId)?.name.charAt(0) || "?"}
+              </ThemedText>
+            </View>
+            <View>
+              <ThemedText type="body">
+                {employees.find(e => e.id === selectedEmployeeId)?.name || "Unknown"}
+              </ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, textTransform: "capitalize" }}>
+                {employees.find(e => e.id === selectedEmployeeId)?.role || ""}
+              </ThemedText>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.assignPlaceholder}>
+            <Feather name="user-plus" size={18} color={theme.accent} />
+            <ThemedText type="body" style={{ color: theme.textSecondary }}>
+              Select a tailor (optional)
+            </ThemedText>
+          </View>
+        )}
+        <Feather name="chevron-down" size={20} color={theme.textSecondary} />
+      </Pressable>
+
+      {showEmployeePicker ? (
+        <View style={[styles.customerList, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
+          {employees.length === 0 ? (
+            <ThemedText type="small" style={{ color: theme.textSecondary, padding: Spacing.lg }}>
+              No employees available. Add an employee first.
+            </ThemedText>
+          ) : (
+            <>
+              <Pressable
+                style={[
+                  styles.customerOption,
+                  !selectedEmployeeId && { backgroundColor: theme.primary + "10" },
+                ]}
+                onPress={() => {
+                  setSelectedEmployeeId("");
+                  setShowEmployeePicker(false);
+                }}
+              >
+                <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                  No assignment
+                </ThemedText>
+              </Pressable>
+              {employees.map((employee) => (
+                <Pressable
+                  key={employee.id}
+                  style={[
+                    styles.customerOption,
+                    selectedEmployeeId === employee.id && { backgroundColor: theme.accent + "10" },
+                  ]}
+                  onPress={() => {
+                    setSelectedEmployeeId(employee.id);
+                    setShowEmployeePicker(false);
+                  }}
+                >
+                  <ThemedText type="body">{employee.name}</ThemedText>
+                  <ThemedText type="caption" style={{ color: theme.textSecondary, textTransform: "capitalize" }}>
+                    {employee.role} - {employee.assignedOrders?.length || 0} orders assigned
+                  </ThemedText>
+                </Pressable>
+              ))}
+            </>
           )}
         </View>
       ) : null}
@@ -414,6 +512,11 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     alignItems: "center",
     justifyContent: "center",
+  },
+  assignPlaceholder: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
   },
   customerList: {
     borderRadius: BorderRadius.md,
