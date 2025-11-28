@@ -1,0 +1,57 @@
+# TailorFlow App Design Prompt
+
+## Description
+Design a clean and modern mobile and web application interface for TailorFlow, a customer and employee management platform tailored for small tailoring shops and boutique businesses. Include a well-crafted home page with a refined, minimalistic logo that reflects precision, creativity, and craftsmanship.
+
+## Style
+Modern, elegant, and intuitive user experience using:
+- Neutral color tones
+- Clear typography
+- Simple navigation
+- Smooth interactions
+- Intuitive icons
+
+---
+
+## Core Pages and Features
+
+### 1. Home / Dashboard
+- Display quick stats: total active orders, completed work, today’s revenue, pending payments.
+- Include quick links to Customers, Employees, Orders, Payments, Inventory, and Analytics.
+- Prominently show the logo and brand name “TailorFlow” at the top.
+
+### 2. Customer Management
+- Customer profile cards with contact details, order history, and measurement data.
+- Tabs for personal info, measurements, images (fabric, completed designs), and notes.
+- Option to send notifications or messages (SMS/app).
+
+### 3. Order Management
+- Create, edit, and track orders from consultation to delivery.
+- Status flow: Pending → In Progress → Completed → Delivered.
+- Attach order images and notes.
+- Search and filter by customer name or order ID.
+
+### 4. Employee Management
+- Employee profile with contact info, assigned tasks, attendance, and payroll summary.
+- Task assignment interface to allocate tailoring jobs with due dates.
+- Performance metrics dashboard to track output and quality.
+
+### 5. Payment Management
+- Generate digital invoices with itemized charges (fabric, tailoring, alterations).
+- Support multiple payment modes: cash, card, UPI, wallet, bank transfer.
+- Manage partial payments, issue receipts, and track outstanding balances.
+- Financial summaries with daily/weekly/monthly revenue charts.
+
+### 6. Analytics & Reports
+- Dashboard for revenue, orders, and outstanding dues.
+- Filters for customers, employees, and payment history.
+- Fabric and accessory inventory alerts with reorder suggestions.
+- Role-based access control (Admin, Tailor, Manager).
+- Mobile-responsive layout for smartphones and tablets.
+
+---
+
+## Branding and Aesthetic
+- **Logo Concept:** Thread loop forming a minimalist "T" inside a circle, symbolizing flow and precision.
+- **Color Palette:** Soft gold or maroon with white and light gray backgrounds.
+- **Font Suggestion:** Modern sans-serif such as Poppins or Lato.
