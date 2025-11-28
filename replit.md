@@ -134,3 +134,70 @@ Preferred communication style: Simple, everyday language.
 - **Expo Web Browser**: In-app browser functionality
 - Custom build scripts for Replit deployment with Metro bundler
 - Static hosting with QR code landing page for mobile access
+
+## Recent Changes
+
+**November 28, 2025 - MVP Complete**
+
+1. **Employee Assignment System**
+   - Modal picker for assigning/unassigning employees to orders
+   - Employee workload tracking via assignedOrders array
+   - Automatic cleanup when orders are deleted
+
+2. **Customer Balance Synchronization**
+   - Outstanding balance accurately calculated from orders and payments
+   - updateCustomerBalance function called after all order/payment operations
+   - Handles order creation, updates, deletion, and payment recording
+
+3. **Order Amount Flexibility**
+   - Direct amount input for orders without line items
+   - Automatic calculation from items when items are added
+   - Validation to ensure positive order amounts
+
+4. **Payment Tracking**
+   - paidAmount persists correctly when editing orders
+   - Balance correctly clamped when order total is reduced below paid amount
+   - Multiple payment modes supported
+
+5. **Settings Screen**
+   - Shop profile editing with name and phone
+   - Data summary showing counts for all entities
+   - JSON export of all data via Share API
+   - Clear all data with confirmation
+
+6. **Dashboard Analytics**
+   - Real-time KPIs for orders, revenue, and customers
+   - Revenue breakdown by status (pending, in-progress, completed)
+   - Recent activity feed
+
+## Project Structure
+
+```
+/screens
+  - DashboardScreen.tsx  # Home with stats and activity feed
+  - CustomersScreen.tsx  # Customer list with search
+  - AddCustomerScreen.tsx  # Customer CRUD with measurements
+  - OrdersScreen.tsx  # Order list with status filters
+  - AddOrderScreen.tsx  # Order creation/editing
+  - OrderDetailScreen.tsx  # Order details, status updates, employee assignment
+  - EmployeesScreen.tsx  # Employee list
+  - AddEmployeeScreen.tsx  # Employee CRUD with roles
+  - PaymentsScreen.tsx  # Payment list with customer filter
+  - AddPaymentScreen.tsx  # Payment recording
+  - SettingsScreen.tsx  # Shop settings, export, data management
+  - AnalyticsScreen.tsx  # Business analytics
+
+/utils
+  - storage.ts  # AsyncStorage CRUD operations, balance calculations
+
+/types
+  - index.ts  # TypeScript interfaces for all data models
+
+/components
+  - Card.tsx, ThemedText.tsx, ThemedView.tsx  # UI primitives
+  - ErrorBoundary.tsx  # App crash recovery
+  - ScreenScrollView.tsx, ScreenKeyboardAwareScrollView.tsx  # Layout helpers
+
+/constants
+  - theme.ts  # Colors, spacing, typography, border radius
+```
