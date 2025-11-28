@@ -15,6 +15,7 @@ import {
   deleteOrder, 
   assignEmployeeToOrder,
   unassignEmployeeFromOrder,
+  calculateItemTotal,
   formatCurrency, 
   formatDate 
 } from "@/utils/storage";
@@ -256,36 +257,57 @@ export default function OrderDetailScreen() {
       <ThemedText type="h4" style={styles.sectionTitle}>
         Order Items
       </ThemedText>
-      <View style={[styles.itemsCard, { backgroundColor: theme.backgroundDefault }]}>
-        {order.items.length > 0 ? (
-          order.items.map((item, index) => (
-            <View
-              key={item.id}
-              style={[
-                styles.itemRow,
-                index < order.items.length - 1 && {
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.border,
-                },
-              ]}
-            >
-              <View style={styles.itemInfo}>
-                <ThemedText type="body">{item.name}</ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  Qty: {item.quantity}
-                </ThemedText>
+      {order.items.length > 0 ? (
+        <View style={{ gap: Spacing.md }}>
+          {order.items.map((item) => {
+            const basePrice = (item as any).basePrice ?? (item as any).price ?? 0;
+            const extras = item.extras || [];
+            const itemTotal = calculateItemTotal({ ...item, basePrice, extras });
+            return (
+              <View key={item.id} style={[styles.itemCard, { backgroundColor: theme.backgroundDefault }]}>
+                <View style={styles.itemCardHeader}>
+                  <ThemedText type="body" style={{ fontWeight: "600" }}>{item.name}</ThemedText>
+                  {item.quantity > 1 ? (
+                    <ThemedText type="caption" style={{ color: theme.textSecondary }}>x{item.quantity}</ThemedText>
+                  ) : null}
+                </View>
+                <View style={styles.itemBreakdown}>
+                  <View style={styles.breakdownLine}>
+                    <ThemedText type="caption" style={{ color: theme.textSecondary }}>Base Price</ThemedText>
+                    <ThemedText type="caption">{formatCurrency(basePrice)}</ThemedText>
+                  </View>
+                  {extras.map((extra: any) => (
+                    <View key={extra.id} style={styles.breakdownLine}>
+                      <ThemedText type="caption" style={{ color: theme.textSecondary }}>+ {extra.label}</ThemedText>
+                      <ThemedText type="caption">{formatCurrency(extra.amount)}</ThemedText>
+                    </View>
+                  ))}
+                  <View style={[styles.divider, { backgroundColor: theme.border, marginVertical: Spacing.xs }]} />
+                  <View style={styles.breakdownLine}>
+                    <ThemedText type="body" style={{ fontWeight: "600" }}>Subtotal</ThemedText>
+                    <ThemedText type="body" style={{ fontWeight: "600", color: theme.primary }}>
+                      {formatCurrency(itemTotal)}
+                    </ThemedText>
+                  </View>
+                </View>
+                {item.notes ? (
+                  <ThemedText type="caption" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+                    Note: {item.notes}
+                  </ThemedText>
+                ) : null}
               </View>
-              <ThemedText type="body">{formatCurrency(item.price * item.quantity)}</ThemedText>
-            </View>
-          ))
-        ) : (
+            );
+          })}
+        </View>
+      ) : (
+        <View style={[styles.itemsCard, { backgroundColor: theme.backgroundDefault }]}>
           <View style={styles.emptyItems}>
             <ThemedText type="small" style={{ color: theme.textSecondary }}>
               No items added
             </ThemedText>
           </View>
-        )}
-      </View>
+        </View>
+      )}
 
       <ThemedText type="h4" style={styles.sectionTitle}>
         Timeline
@@ -539,6 +561,24 @@ const styles = StyleSheet.create({
   },
   emptyItems: {
     padding: Spacing["2xl"],
+    alignItems: "center",
+  },
+  itemCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+  },
+  itemCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  itemBreakdown: {
+    gap: Spacing.xs,
+  },
+  breakdownLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
   timelineCard: {

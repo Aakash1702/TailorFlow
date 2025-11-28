@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Customer, Order, Employee, Payment, ActivityItem } from '@/types';
+import { Customer, Order, Employee, Payment, ActivityItem, ExtrasPreset, OrderItem } from '@/types';
 
 const STORAGE_KEYS = {
   CUSTOMERS: 'tailorflow_customers',
@@ -7,10 +7,55 @@ const STORAGE_KEYS = {
   EMPLOYEES: 'tailorflow_employees',
   PAYMENTS: 'tailorflow_payments',
   ACTIVITIES: 'tailorflow_activities',
+  EXTRAS_PRESETS: 'tailorflow_extras_presets',
   USER_LOGGED_IN: 'tailorflow_user_logged_in',
   USER_NAME: 'tailorflow_user_name',
   SHOP_NAME: 'tailorflow_shop_name',
 };
+
+const DEFAULT_EXTRAS_PRESETS: ExtrasPreset[] = [
+  { id: 'preset_1', label: 'Designer Work', amount: 200, category: 'design' },
+  { id: 'preset_2', label: 'Embroidery', amount: 300, category: 'design' },
+  { id: 'preset_3', label: 'Neck Zip', amount: 50, category: 'finishing' },
+  { id: 'preset_4', label: 'Side Zip', amount: 50, category: 'finishing' },
+  { id: 'preset_5', label: 'Lining', amount: 100, category: 'material' },
+  { id: 'preset_6', label: 'Pico/Fall', amount: 80, category: 'finishing' },
+  { id: 'preset_7', label: 'Padding', amount: 60, category: 'material' },
+  { id: 'preset_8', label: 'Piping', amount: 40, category: 'finishing' },
+  { id: 'preset_9', label: 'Hooks', amount: 30, category: 'finishing' },
+  { id: 'preset_10', label: 'Steam Press', amount: 50, category: 'finishing' },
+];
+
+export async function getExtrasPresets(): Promise<ExtrasPreset[]> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.EXTRAS_PRESETS);
+    if (data) {
+      return JSON.parse(data);
+    }
+    await AsyncStorage.setItem(STORAGE_KEYS.EXTRAS_PRESETS, JSON.stringify(DEFAULT_EXTRAS_PRESETS));
+    return DEFAULT_EXTRAS_PRESETS;
+  } catch (error) {
+    console.error('Error getting extras presets:', error);
+    return DEFAULT_EXTRAS_PRESETS;
+  }
+}
+
+export async function saveExtrasPresets(presets: ExtrasPreset[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.EXTRAS_PRESETS, JSON.stringify(presets));
+  } catch (error) {
+    console.error('Error saving extras presets:', error);
+  }
+}
+
+export function calculateItemTotal(item: OrderItem): number {
+  const extrasTotal = item.extras?.reduce((sum, extra) => sum + extra.amount, 0) || 0;
+  return (item.basePrice + extrasTotal) * item.quantity;
+}
+
+export function calculateOrderTotal(items: OrderItem[]): number {
+  return items.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+}
 
 export async function getCustomers(): Promise<Customer[]> {
   try {

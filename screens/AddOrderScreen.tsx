@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, TextInput, Pressable, Alert } from "react-native";
+import { View, StyleSheet, TextInput, Pressable, Alert, Modal, ScrollView } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
@@ -11,14 +11,17 @@ import {
   getOrders,
   getCustomers,
   getEmployees,
+  getExtrasPresets,
   addOrder,
   updateOrder,
   updateCustomerBalance,
   assignEmployeeToOrder,
+  calculateItemTotal,
+  calculateOrderTotal,
   generateId,
   formatCurrency,
 } from "@/utils/storage";
-import { Order, Customer, OrderItem, Employee } from "@/types";
+import { Order, Customer, OrderItem, OrderItemExtra, Employee, ExtrasPreset } from "@/types";
 
 export default function AddOrderScreen() {
   const { theme } = useTheme();
@@ -29,19 +32,26 @@ export default function AddOrderScreen() {
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [extrasPresets, setExtrasPresets] = useState<ExtrasPreset[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<OrderItem[]>([]);
-  const [manualAmount, setManualAmount] = useState("");
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemPrice, setNewItemPrice] = useState("");
-  const [newItemQty, setNewItemQty] = useState("1");
   const [loading, setLoading] = useState(false);
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
   const [showEmployeePicker, setShowEmployeePicker] = useState(false);
+  
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [itemName, setItemName] = useState("");
+  const [itemBasePrice, setItemBasePrice] = useState("");
+  const [itemQty, setItemQty] = useState("1");
+  const [itemNotes, setItemNotes] = useState("");
+  const [selectedExtras, setSelectedExtras] = useState<OrderItemExtra[]>([]);
+  const [customExtraLabel, setCustomExtraLabel] = useState("");
+  const [customExtraAmount, setCustomExtraAmount] = useState("");
 
   useEffect(() => {
     loadData();
@@ -53,6 +63,9 @@ export default function AddOrderScreen() {
     
     const employeeData = await getEmployees();
     setEmployees(employeeData.filter(e => e.isActive));
+    
+    const presets = await getExtrasPresets();
+    setExtrasPresets(presets);
 
     if (orderId) {
       const orders = await getOrders();
@@ -62,11 +75,13 @@ export default function AddOrderScreen() {
         setDescription(order.description);
         setDueDate(order.dueDate.split("T")[0]);
         setNotes(order.notes || "");
-        setItems(order.items);
+        const migratedItems = order.items.map(item => ({
+          ...item,
+          basePrice: (item as any).basePrice ?? (item as any).price ?? 0,
+          extras: item.extras || [],
+        }));
+        setItems(migratedItems);
         setSelectedEmployeeId(order.assignedEmployeeId || "");
-        if (order.items.length === 0) {
-          setManualAmount(order.amount.toString());
-        }
       }
     } else {
       const tomorrow = new Date();
@@ -75,41 +90,103 @@ export default function AddOrderScreen() {
     }
   };
 
-  const handleAddItem = () => {
-    if (!newItemName.trim() || !newItemPrice.trim()) {
-      Alert.alert("Required", "Please enter item name and price");
-      return;
-    }
+  const openAddItemModal = () => {
+    setEditingItemId(null);
+    setItemName("");
+    setItemBasePrice("");
+    setItemQty("1");
+    setItemNotes("");
+    setSelectedExtras([]);
+    setShowItemModal(true);
+  };
 
-    const price = parseFloat(newItemPrice);
-    const qty = parseInt(newItemQty) || 1;
+  const openEditItemModal = (item: OrderItem) => {
+    setEditingItemId(item.id);
+    setItemName(item.name);
+    setItemBasePrice(item.basePrice.toString());
+    setItemQty(item.quantity.toString());
+    setItemNotes(item.notes || "");
+    setSelectedExtras(item.extras || []);
+    setShowItemModal(true);
+  };
 
-    if (isNaN(price) || price <= 0) {
-      Alert.alert("Invalid", "Please enter a valid price");
-      return;
-    }
-
-    setItems([
-      ...items,
-      {
+  const toggleExtra = (preset: ExtrasPreset) => {
+    const exists = selectedExtras.find(e => e.label === preset.label);
+    if (exists) {
+      setSelectedExtras(selectedExtras.filter(e => e.label !== preset.label));
+    } else {
+      setSelectedExtras([...selectedExtras, {
         id: generateId(),
-        name: newItemName.trim(),
-        price,
-        quantity: qty,
-      },
-    ]);
-
-    setNewItemName("");
-    setNewItemPrice("");
-    setNewItemQty("1");
+        label: preset.label,
+        amount: preset.amount,
+      }]);
+    }
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    setItems(items.filter((i) => i.id !== itemId));
+  const addCustomExtra = () => {
+    if (!customExtraLabel.trim() || !customExtraAmount.trim()) {
+      Alert.alert("Required", "Please enter extra name and amount");
+      return;
+    }
+    const amount = parseFloat(customExtraAmount);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert("Invalid", "Please enter a valid amount");
+      return;
+    }
+    setSelectedExtras([...selectedExtras, {
+      id: generateId(),
+      label: customExtraLabel.trim(),
+      amount,
+    }]);
+    setCustomExtraLabel("");
+    setCustomExtraAmount("");
   };
 
-  const itemsTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const totalAmount = items.length > 0 ? itemsTotal : parseFloat(manualAmount) || 0;
+  const removeExtra = (extraId: string) => {
+    setSelectedExtras(selectedExtras.filter(e => e.id !== extraId));
+  };
+
+  const saveItem = () => {
+    if (!itemName.trim()) {
+      Alert.alert("Required", "Please enter item name");
+      return;
+    }
+    const basePrice = parseFloat(itemBasePrice);
+    if (isNaN(basePrice) || basePrice <= 0) {
+      Alert.alert("Invalid", "Please enter a valid base price");
+      return;
+    }
+    const qty = parseInt(itemQty) || 1;
+
+    const newItem: OrderItem = {
+      id: editingItemId || generateId(),
+      name: itemName.trim(),
+      basePrice,
+      quantity: qty,
+      extras: selectedExtras,
+      notes: itemNotes.trim() || undefined,
+    };
+
+    if (editingItemId) {
+      setItems(items.map(i => i.id === editingItemId ? newItem : i));
+    } else {
+      setItems([...items, newItem]);
+    }
+    setShowItemModal(false);
+  };
+
+  const removeItem = (itemId: string) => {
+    Alert.alert(
+      "Remove Item",
+      "Are you sure you want to remove this item?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", style: "destructive", onPress: () => setItems(items.filter(i => i.id !== itemId)) },
+      ]
+    );
+  };
+
+  const totalAmount = calculateOrderTotal(items);
 
   const handleSave = async () => {
     if (!selectedCustomerId) {
@@ -124,8 +201,8 @@ export default function AddOrderScreen() {
       Alert.alert("Required", "Please enter due date");
       return;
     }
-    if (totalAmount <= 0) {
-      Alert.alert("Required", "Please enter order amount or add items");
+    if (items.length === 0) {
+      Alert.alert("Required", "Please add at least one item");
       return;
     }
 
@@ -197,6 +274,12 @@ export default function AddOrderScreen() {
   };
 
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+  const currentItemTotal = (() => {
+    const base = parseFloat(itemBasePrice) || 0;
+    const extrasSum = selectedExtras.reduce((sum, e) => sum + e.amount, 0);
+    const qty = parseInt(itemQty) || 1;
+    return (base + extrasSum) * qty;
+  })();
 
   return (
     <ScreenKeyboardAwareScrollView>
@@ -204,11 +287,11 @@ export default function AddOrderScreen() {
         Customer
       </ThemedText>
       <Pressable
-        style={[styles.customerPicker, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}
+        style={[styles.picker, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}
         onPress={() => setShowCustomerPicker(!showCustomerPicker)}
       >
         {selectedCustomer ? (
-          <View style={styles.selectedCustomer}>
+          <View style={styles.selectedRow}>
             <View style={[styles.avatar, { backgroundColor: theme.primary + "20" }]}>
               <ThemedText type="body" style={{ color: theme.primary }}>
                 {selectedCustomer.name.charAt(0)}
@@ -230,28 +313,20 @@ export default function AddOrderScreen() {
       </Pressable>
 
       {showCustomerPicker ? (
-        <View style={[styles.customerList, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
+        <View style={[styles.pickerList, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
           {customers.length === 0 ? (
             <ThemedText type="small" style={{ color: theme.textSecondary, padding: Spacing.lg }}>
-              No customers available. Add a customer first.
+              No customers available
             </ThemedText>
           ) : (
             customers.map((customer) => (
               <Pressable
                 key={customer.id}
-                style={[
-                  styles.customerOption,
-                  selectedCustomerId === customer.id && { backgroundColor: theme.primary + "10" },
-                ]}
-                onPress={() => {
-                  setSelectedCustomerId(customer.id);
-                  setShowCustomerPicker(false);
-                }}
+                style={[styles.pickerOption, selectedCustomerId === customer.id && { backgroundColor: theme.primary + "10" }]}
+                onPress={() => { setSelectedCustomerId(customer.id); setShowCustomerPicker(false); }}
               >
                 <ThemedText type="body">{customer.name}</ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  {customer.phone}
-                </ThemedText>
+                <ThemedText type="caption" style={{ color: theme.textSecondary }}>{customer.phone}</ThemedText>
               </Pressable>
             ))
           )}
@@ -262,78 +337,52 @@ export default function AddOrderScreen() {
         Assign Tailor
       </ThemedText>
       <Pressable
-        style={[styles.customerPicker, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}
+        style={[styles.picker, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}
         onPress={() => setShowEmployeePicker(!showEmployeePicker)}
       >
         {selectedEmployeeId ? (
-          <View style={styles.selectedCustomer}>
+          <View style={styles.selectedRow}>
             <View style={[styles.avatar, { backgroundColor: theme.accent + "20" }]}>
               <ThemedText type="body" style={{ color: theme.accent }}>
                 {employees.find(e => e.id === selectedEmployeeId)?.name.charAt(0) || "?"}
               </ThemedText>
             </View>
             <View>
-              <ThemedText type="body">
-                {employees.find(e => e.id === selectedEmployeeId)?.name || "Unknown"}
-              </ThemedText>
+              <ThemedText type="body">{employees.find(e => e.id === selectedEmployeeId)?.name}</ThemedText>
               <ThemedText type="caption" style={{ color: theme.textSecondary, textTransform: "capitalize" }}>
-                {employees.find(e => e.id === selectedEmployeeId)?.role || ""}
+                {employees.find(e => e.id === selectedEmployeeId)?.role}
               </ThemedText>
             </View>
           </View>
         ) : (
-          <View style={styles.assignPlaceholder}>
+          <View style={styles.placeholderRow}>
             <Feather name="user-plus" size={18} color={theme.accent} />
-            <ThemedText type="body" style={{ color: theme.textSecondary }}>
-              Select a tailor (optional)
-            </ThemedText>
+            <ThemedText type="body" style={{ color: theme.textSecondary }}>Select a tailor (optional)</ThemedText>
           </View>
         )}
         <Feather name="chevron-down" size={20} color={theme.textSecondary} />
       </Pressable>
 
       {showEmployeePicker ? (
-        <View style={[styles.customerList, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
-          {employees.length === 0 ? (
-            <ThemedText type="small" style={{ color: theme.textSecondary, padding: Spacing.lg }}>
-              No employees available. Add an employee first.
-            </ThemedText>
-          ) : (
-            <>
-              <Pressable
-                style={[
-                  styles.customerOption,
-                  !selectedEmployeeId && { backgroundColor: theme.primary + "10" },
-                ]}
-                onPress={() => {
-                  setSelectedEmployeeId("");
-                  setShowEmployeePicker(false);
-                }}
-              >
-                <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                  No assignment
-                </ThemedText>
-              </Pressable>
-              {employees.map((employee) => (
-                <Pressable
-                  key={employee.id}
-                  style={[
-                    styles.customerOption,
-                    selectedEmployeeId === employee.id && { backgroundColor: theme.accent + "10" },
-                  ]}
-                  onPress={() => {
-                    setSelectedEmployeeId(employee.id);
-                    setShowEmployeePicker(false);
-                  }}
-                >
-                  <ThemedText type="body">{employee.name}</ThemedText>
-                  <ThemedText type="caption" style={{ color: theme.textSecondary, textTransform: "capitalize" }}>
-                    {employee.role} - {employee.assignedOrders?.length || 0} orders assigned
-                  </ThemedText>
-                </Pressable>
-              ))}
-            </>
-          )}
+        <View style={[styles.pickerList, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
+          <Pressable
+            style={[styles.pickerOption, !selectedEmployeeId && { backgroundColor: theme.primary + "10" }]}
+            onPress={() => { setSelectedEmployeeId(""); setShowEmployeePicker(false); }}
+          >
+            <ThemedText type="body" style={{ color: theme.textSecondary }}>No assignment</ThemedText>
+          </Pressable>
+          {employees.map((employee) => (
+            <Pressable
+              key={employee.id}
+              style={[styles.pickerOption, selectedEmployeeId === employee.id && { backgroundColor: theme.accent + "10" }]}
+              onPress={() => { setSelectedEmployeeId(employee.id); setShowEmployeePicker(false); }}
+            >
+              <ThemedText type="body">{employee.name}</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, textTransform: "capitalize" }}>
+                {employee.role} - {employee.assignedOrders?.length || 0} orders
+              </ThemedText>
+            </Pressable>
+          ))}
         </View>
       ) : null}
 
@@ -345,7 +394,7 @@ export default function AddOrderScreen() {
           <ThemedText type="body">Description *</ThemedText>
           <TextInput
             style={[styles.input, { color: theme.text }]}
-            placeholder="e.g., Custom suit, Wedding dress"
+            placeholder="e.g., 2 Saree Blouses"
             placeholderTextColor={theme.textSecondary}
             value={description}
             onChangeText={setDescription}
@@ -364,97 +413,69 @@ export default function AddOrderScreen() {
         </View>
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Order Amount
-      </ThemedText>
-      <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
-        <View style={styles.inputRow}>
-          <ThemedText type="body">Total Amount *</ThemedText>
-          <TextInput
-            style={[styles.amountInput, { color: theme.text }]}
-            placeholder="Enter amount"
-            placeholderTextColor={theme.textSecondary}
-            value={items.length > 0 ? formatCurrency(itemsTotal) : manualAmount}
-            onChangeText={setManualAmount}
-            keyboardType="decimal-pad"
-            editable={items.length === 0}
-          />
-          {items.length > 0 ? (
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              Calculated from items below
-            </ThemedText>
-          ) : null}
-        </View>
+      <View style={styles.itemsHeader}>
+        <ThemedText type="h4">Order Items</ThemedText>
+        <Pressable style={[styles.addButton, { backgroundColor: theme.primary }]} onPress={openAddItemModal}>
+          <Feather name="plus" size={16} color="#FFFFFF" />
+          <ThemedText type="caption" style={{ color: "#FFFFFF" }}>Add Item</ThemedText>
+        </Pressable>
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Order Items (Optional)
-      </ThemedText>
-      <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
-        <View style={styles.addItemRow}>
-          <TextInput
-            style={[styles.itemNameInput, { color: theme.text, borderColor: theme.border }]}
-            placeholder="Item name"
-            placeholderTextColor={theme.textSecondary}
-            value={newItemName}
-            onChangeText={setNewItemName}
-          />
-          <TextInput
-            style={[styles.itemPriceInput, { color: theme.text, borderColor: theme.border }]}
-            placeholder="Price"
-            placeholderTextColor={theme.textSecondary}
-            value={newItemPrice}
-            onChangeText={setNewItemPrice}
-            keyboardType="decimal-pad"
-          />
-          <TextInput
-            style={[styles.itemQtyInput, { color: theme.text, borderColor: theme.border }]}
-            placeholder="Qty"
-            placeholderTextColor={theme.textSecondary}
-            value={newItemQty}
-            onChangeText={setNewItemQty}
-            keyboardType="number-pad"
-          />
-          <Pressable
-            style={[styles.addItemButton, { backgroundColor: theme.primary }]}
-            onPress={handleAddItem}
-          >
-            <Feather name="plus" size={18} color="#FFFFFF" />
-          </Pressable>
+      {items.length === 0 ? (
+        <View style={[styles.emptyItems, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
+          <Feather name="shopping-bag" size={32} color={theme.textSecondary} />
+          <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.sm }}>
+            No items added yet
+          </ThemedText>
+          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+            Tap "Add Item" to add items with pricing
+          </ThemedText>
         </View>
-
-        {items.map((item, index) => (
-          <View key={item.id}>
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            <View style={styles.itemRow}>
-              <View style={styles.itemInfo}>
-                <ThemedText type="body">{item.name}</ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  {formatCurrency(item.price)} x {item.quantity}
-                </ThemedText>
+      ) : (
+        <View style={{ gap: Spacing.md }}>
+          {items.map((item) => (
+            <Pressable key={item.id} style={[styles.itemCard, { backgroundColor: theme.backgroundDefault }]} onPress={() => openEditItemModal(item)}>
+              <View style={styles.itemHeader}>
+                <View style={{ flex: 1 }}>
+                  <ThemedText type="body" style={{ fontWeight: "600" }}>{item.name}</ThemedText>
+                  {item.quantity > 1 ? (
+                    <ThemedText type="caption" style={{ color: theme.textSecondary }}>Qty: {item.quantity}</ThemedText>
+                  ) : null}
+                </View>
+                <Pressable onPress={() => removeItem(item.id)} hitSlop={8}>
+                  <Feather name="trash-2" size={18} color={theme.error} />
+                </Pressable>
               </View>
-              <ThemedText type="body" style={{ fontWeight: "600" }}>
-                {formatCurrency(item.price * item.quantity)}
-              </ThemedText>
-              <Pressable onPress={() => handleRemoveItem(item.id)}>
-                <Feather name="x" size={18} color={theme.error} />
-              </Pressable>
-            </View>
-          </View>
-        ))}
+              <View style={styles.itemBreakdown}>
+                <View style={styles.breakdownRow}>
+                  <ThemedText type="caption" style={{ color: theme.textSecondary }}>Base Price</ThemedText>
+                  <ThemedText type="caption">{formatCurrency(item.basePrice)}</ThemedText>
+                </View>
+                {item.extras?.map((extra) => (
+                  <View key={extra.id} style={styles.breakdownRow}>
+                    <ThemedText type="caption" style={{ color: theme.textSecondary }}>+ {extra.label}</ThemedText>
+                    <ThemedText type="caption">{formatCurrency(extra.amount)}</ThemedText>
+                  </View>
+                ))}
+                <View style={[styles.divider, { backgroundColor: theme.border, marginVertical: Spacing.xs }]} />
+                <View style={styles.breakdownRow}>
+                  <ThemedText type="body" style={{ fontWeight: "600" }}>Item Total</ThemedText>
+                  <ThemedText type="body" style={{ fontWeight: "600", color: theme.primary }}>
+                    {formatCurrency(calculateItemTotal(item))}
+                  </ThemedText>
+                </View>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
-        {items.length > 0 ? (
-          <>
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            <View style={styles.totalRow}>
-              <ThemedText type="h4">Total</ThemedText>
-              <ThemedText type="h3" style={{ color: theme.primary }}>
-                {formatCurrency(itemsTotal)}
-              </ThemedText>
-            </View>
-          </>
-        ) : null}
-      </View>
+      {items.length > 0 ? (
+        <View style={[styles.grandTotal, { backgroundColor: theme.primary + "10" }]}>
+          <ThemedText type="h4">Grand Total</ThemedText>
+          <ThemedText type="h2" style={{ color: theme.primary }}>{formatCurrency(totalAmount)}</ThemedText>
+        </View>
+      ) : null}
 
       <ThemedText type="h4" style={styles.sectionTitle}>
         Notes
@@ -467,16 +488,12 @@ export default function AddOrderScreen() {
           value={notes}
           onChangeText={setNotes}
           multiline
-          numberOfLines={4}
           textAlignVertical="top"
         />
       </View>
 
       <Pressable
-        style={({ pressed }) => [
-          styles.saveButton,
-          { backgroundColor: theme.primary, opacity: pressed || loading ? 0.8 : 1 },
-        ]}
+        style={[styles.saveButton, { backgroundColor: loading ? theme.textSecondary : theme.primary }]}
         onPress={handleSave}
         disabled={loading}
       >
@@ -484,6 +501,148 @@ export default function AddOrderScreen() {
           {loading ? "Saving..." : isEditing ? "Update Order" : "Create Order"}
         </ThemedText>
       </Pressable>
+
+      <Modal visible={showItemModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="h3">{editingItemId ? "Edit Item" : "Add Item"}</ThemedText>
+              <Pressable onPress={() => setShowItemModal(false)}>
+                <Feather name="x" size={24} color={theme.text} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
+                <View style={styles.inputRow}>
+                  <ThemedText type="body">Item Name *</ThemedText>
+                  <TextInput
+                    style={[styles.input, { color: theme.text }]}
+                    placeholder="e.g., Saree Blouse"
+                    placeholderTextColor={theme.textSecondary}
+                    value={itemName}
+                    onChangeText={setItemName}
+                  />
+                </View>
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                <View style={styles.inputRow}>
+                  <ThemedText type="body">Base Price *</ThemedText>
+                  <TextInput
+                    style={[styles.input, { color: theme.text }]}
+                    placeholder="e.g., 500"
+                    placeholderTextColor={theme.textSecondary}
+                    value={itemBasePrice}
+                    onChangeText={setItemBasePrice}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                <View style={styles.inputRow}>
+                  <ThemedText type="body">Quantity</ThemedText>
+                  <TextInput
+                    style={[styles.input, { color: theme.text }]}
+                    placeholder="1"
+                    placeholderTextColor={theme.textSecondary}
+                    value={itemQty}
+                    onChangeText={setItemQty}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
+
+              <ThemedText type="h4" style={styles.sectionTitle}>
+                Add-ons / Extras
+              </ThemedText>
+              <View style={styles.extrasChips}>
+                {extrasPresets.map((preset) => {
+                  const isSelected = selectedExtras.some(e => e.label === preset.label);
+                  return (
+                    <Pressable
+                      key={preset.id}
+                      style={[
+                        styles.chip,
+                        { borderColor: isSelected ? theme.accent : theme.border },
+                        isSelected && { backgroundColor: theme.accent + "15" },
+                      ]}
+                      onPress={() => toggleExtra(preset)}
+                    >
+                      <ThemedText type="caption" style={{ color: isSelected ? theme.accent : theme.text }}>
+                        {preset.label} (+{formatCurrency(preset.amount)})
+                      </ThemedText>
+                      {isSelected ? <Feather name="check" size={14} color={theme.accent} /> : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <ThemedText type="body" style={{ marginTop: Spacing.lg, marginBottom: Spacing.sm }}>
+                Custom Extra
+              </ThemedText>
+              <View style={styles.customExtraRow}>
+                <TextInput
+                  style={[styles.customExtraInput, { color: theme.text, borderColor: theme.border, flex: 2 }]}
+                  placeholder="Name"
+                  placeholderTextColor={theme.textSecondary}
+                  value={customExtraLabel}
+                  onChangeText={setCustomExtraLabel}
+                />
+                <TextInput
+                  style={[styles.customExtraInput, { color: theme.text, borderColor: theme.border, flex: 1 }]}
+                  placeholder="Amount"
+                  placeholderTextColor={theme.textSecondary}
+                  value={customExtraAmount}
+                  onChangeText={setCustomExtraAmount}
+                  keyboardType="decimal-pad"
+                />
+                <Pressable style={[styles.addExtraBtn, { backgroundColor: theme.accent }]} onPress={addCustomExtra}>
+                  <Feather name="plus" size={18} color="#FFFFFF" />
+                </Pressable>
+              </View>
+
+              {selectedExtras.length > 0 ? (
+                <View style={[styles.selectedExtras, { backgroundColor: theme.backgroundDefault }]}>
+                  <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
+                    Selected Extras:
+                  </ThemedText>
+                  {selectedExtras.map((extra) => (
+                    <View key={extra.id} style={styles.selectedExtraRow}>
+                      <ThemedText type="body">{extra.label}</ThemedText>
+                      <View style={styles.selectedExtraRight}>
+                        <ThemedText type="body">{formatCurrency(extra.amount)}</ThemedText>
+                        <Pressable onPress={() => removeExtra(extra.id)} hitSlop={8}>
+                          <Feather name="x-circle" size={18} color={theme.error} />
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              <View style={styles.inputRow}>
+                <ThemedText type="body">Item Notes</ThemedText>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  placeholder="Optional notes for this item"
+                  placeholderTextColor={theme.textSecondary}
+                  value={itemNotes}
+                  onChangeText={setItemNotes}
+                />
+              </View>
+
+              <View style={[styles.itemPreview, { backgroundColor: theme.primary + "10" }]}>
+                <ThemedText type="h4">Item Total</ThemedText>
+                <ThemedText type="h2" style={{ color: theme.primary }}>{formatCurrency(currentItemTotal)}</ThemedText>
+              </View>
+            </ScrollView>
+
+            <Pressable style={[styles.modalSaveBtn, { backgroundColor: theme.primary }]} onPress={saveItem}>
+              <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
+                {editingItemId ? "Update Item" : "Add Item"}
+              </ThemedText>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScreenKeyboardAwareScrollView>
   );
 }
@@ -493,7 +652,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     marginTop: Spacing.lg,
   },
-  customerPicker: {
+  picker: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -501,10 +660,15 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     borderWidth: 1,
   },
-  selectedCustomer: {
+  selectedRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
+  },
+  placeholderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
   },
   avatar: {
     width: 36,
@@ -513,19 +677,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  assignPlaceholder: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  customerList: {
+  pickerList: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     marginTop: Spacing.sm,
     maxHeight: 200,
     overflow: "hidden",
   },
-  customerOption: {
+  pickerOption: {
     padding: Spacing.lg,
     gap: Spacing.xs,
   },
@@ -541,65 +700,56 @@ const styles = StyleSheet.create({
     fontSize: 16,
     padding: 0,
   },
-  amountInput: {
-    fontSize: 24,
-    fontWeight: "600",
-    padding: 0,
-  },
   divider: {
     height: 1,
     marginHorizontal: Spacing.lg,
   },
-  addItemRow: {
+  itemsHeader: {
     flexDirection: "row",
-    padding: Spacing.lg,
-    gap: Spacing.sm,
+    justifyContent: "space-between",
     alignItems: "center",
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
   },
-  itemNameInput: {
-    flex: 2,
-    fontSize: 14,
-    padding: Spacing.sm,
-    borderWidth: 1,
-    borderRadius: BorderRadius.xs,
-  },
-  itemPriceInput: {
-    flex: 1,
-    fontSize: 14,
-    padding: Spacing.sm,
-    borderWidth: 1,
-    borderRadius: BorderRadius.xs,
-  },
-  itemQtyInput: {
-    width: 50,
-    fontSize: 14,
-    padding: Spacing.sm,
-    borderWidth: 1,
-    borderRadius: BorderRadius.xs,
-    textAlign: "center",
-  },
-  addItemButton: {
-    width: 36,
-    height: 36,
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
     borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
   },
-  itemRow: {
-    flexDirection: "row",
+  emptyItems: {
+    padding: Spacing["2xl"],
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
     alignItems: "center",
+  },
+  itemCard: {
     padding: Spacing.lg,
-    gap: Spacing.md,
+    borderRadius: BorderRadius.md,
   },
-  itemInfo: {
-    flex: 1,
+  itemHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: Spacing.md,
+  },
+  itemBreakdown: {
     gap: Spacing.xs,
   },
-  totalRow: {
+  breakdownRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  grandTotal: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.lg,
   },
   notesInput: {
     fontSize: 16,
@@ -608,6 +758,91 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: Spacing["2xl"],
+    marginBottom: Spacing.xl,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    maxHeight: "90%",
+    paddingTop: Spacing.lg,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  modalScroll: {
+    paddingHorizontal: Spacing.lg,
+  },
+  extrasChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  customExtraRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    alignItems: "center",
+  },
+  customExtraInput: {
+    fontSize: 14,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+  },
+  addExtraBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectedExtras: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.lg,
+  },
+  selectedExtraRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: Spacing.xs,
+  },
+  selectedExtraRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  itemPreview: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  modalSaveBtn: {
+    margin: Spacing.lg,
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
     alignItems: "center",

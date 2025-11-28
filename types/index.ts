@@ -42,11 +42,26 @@ export interface Order {
   items: OrderItem[];
 }
 
+export interface OrderItemExtra {
+  id: string;
+  label: string;
+  amount: number;
+}
+
 export interface OrderItem {
   id: string;
   name: string;
   quantity: number;
-  price: number;
+  basePrice: number;
+  extras: OrderItemExtra[];
+  notes?: string;
+}
+
+export interface ExtrasPreset {
+  id: string;
+  label: string;
+  amount: number;
+  category: 'design' | 'material' | 'finishing' | 'other';
 }
 
 export interface Employee {
