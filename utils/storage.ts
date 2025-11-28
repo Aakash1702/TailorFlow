@@ -88,6 +88,11 @@ export async function updateOrder(order: Order): Promise<void> {
   const index = orders.findIndex(o => o.id === order.id);
   if (index !== -1) {
     const oldOrder = orders[index];
+    
+    if (order.paidAmount > order.amount) {
+      order.paidAmount = order.amount;
+    }
+    
     orders[index] = order;
     await saveOrders(orders);
     
@@ -110,8 +115,20 @@ export async function updateOrder(order: Order): Promise<void> {
 
 export async function deleteOrder(orderId: string): Promise<void> {
   const orders = await getOrders();
+  const orderToDelete = orders.find(o => o.id === orderId);
   const filtered = orders.filter(o => o.id !== orderId);
   await saveOrders(filtered);
+  
+  if (orderToDelete) {
+    await updateCustomerBalance(orderToDelete.customerId);
+    
+    const employees = await getEmployees();
+    const updatedEmployees = employees.map(e => ({
+      ...e,
+      assignedOrders: e.assignedOrders.filter(id => id !== orderId)
+    }));
+    await saveEmployees(updatedEmployees);
+  }
 }
 
 export async function getEmployees(): Promise<Employee[]> {
@@ -189,6 +206,71 @@ export async function addPayment(payment: Payment): Promise<void> {
   const orderIndex = orders.findIndex(o => o.id === payment.orderId);
   if (orderIndex !== -1) {
     orders[orderIndex].paidAmount += payment.amount;
+    await saveOrders(orders);
+    
+    await updateCustomerBalance(payment.customerId);
+  }
+}
+
+export async function updateCustomerBalance(customerId: string): Promise<void> {
+  const customers = await getCustomers();
+  const orders = await getOrders();
+  
+  const customerIndex = customers.findIndex(c => c.id === customerId);
+  if (customerIndex !== -1) {
+    const customerOrders = orders.filter(o => o.customerId === customerId);
+    const outstandingBalance = customerOrders.reduce((sum, o) => sum + (o.amount - o.paidAmount), 0);
+    customers[customerIndex].outstandingBalance = outstandingBalance;
+    await saveCustomers(customers);
+  }
+}
+
+export async function assignEmployeeToOrder(orderId: string, employeeId: string): Promise<void> {
+  const orders = await getOrders();
+  const employees = await getEmployees();
+  
+  const orderIndex = orders.findIndex(o => o.id === orderId);
+  const employeeIndex = employees.findIndex(e => e.id === employeeId);
+  
+  if (orderIndex !== -1 && employeeIndex !== -1) {
+    const oldEmployeeId = orders[orderIndex].assignedEmployeeId;
+    
+    if (oldEmployeeId && oldEmployeeId !== employeeId) {
+      const oldEmployeeIndex = employees.findIndex(e => e.id === oldEmployeeId);
+      if (oldEmployeeIndex !== -1) {
+        employees[oldEmployeeIndex].assignedOrders = employees[oldEmployeeIndex].assignedOrders.filter(id => id !== orderId);
+      }
+    }
+    
+    orders[orderIndex].assignedEmployeeId = employeeId;
+    
+    if (!employees[employeeIndex].assignedOrders.includes(orderId)) {
+      employees[employeeIndex].assignedOrders.push(orderId);
+    }
+    
+    await saveOrders(orders);
+    await saveEmployees(employees);
+  }
+}
+
+export async function unassignEmployeeFromOrder(orderId: string): Promise<void> {
+  const orders = await getOrders();
+  const employees = await getEmployees();
+  
+  const orderIndex = orders.findIndex(o => o.id === orderId);
+  
+  if (orderIndex !== -1) {
+    const employeeId = orders[orderIndex].assignedEmployeeId;
+    
+    if (employeeId) {
+      const employeeIndex = employees.findIndex(e => e.id === employeeId);
+      if (employeeIndex !== -1) {
+        employees[employeeIndex].assignedOrders = employees[employeeIndex].assignedOrders.filter(id => id !== orderId);
+        await saveEmployees(employees);
+      }
+    }
+    
+    orders[orderIndex].assignedEmployeeId = undefined;
     await saveOrders(orders);
   }
 }

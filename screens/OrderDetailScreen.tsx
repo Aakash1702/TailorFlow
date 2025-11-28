@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, Pressable, Alert } from "react-native";
+import { View, StyleSheet, Pressable, Alert, Modal } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -8,8 +8,17 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { OrdersStackParamList } from "@/navigation/OrdersStackNavigator";
-import { getOrders, updateOrder, deleteOrder, formatCurrency, formatDate } from "@/utils/storage";
-import { Order, OrderStatus } from "@/types";
+import { 
+  getOrders, 
+  getEmployees, 
+  updateOrder, 
+  deleteOrder, 
+  assignEmployeeToOrder,
+  unassignEmployeeFromOrder,
+  formatCurrency, 
+  formatDate 
+} from "@/utils/storage";
+import { Order, OrderStatus, Employee } from "@/types";
 
 const STATUS_STEPS: { key: OrderStatus; label: string; icon: string }[] = [
   { key: "pending", label: "Pending", icon: "clock" },
@@ -23,11 +32,16 @@ export default function OrderDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<OrdersStackParamList>>();
   const route = useRoute<RouteProp<OrdersStackParamList, "OrderDetail">>();
   const [order, setOrder] = useState<Order | null>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [showEmployeePicker, setShowEmployeePicker] = useState(false);
 
   const loadOrder = useCallback(async () => {
     const orders = await getOrders();
     const found = orders.find((o) => o.id === route.params.orderId);
     setOrder(found || null);
+    
+    const employeeData = await getEmployees();
+    setEmployees(employeeData.filter(e => e.isActive));
   }, [route.params.orderId]);
 
   useFocusEffect(
@@ -48,6 +62,21 @@ export default function OrderDetailScreen() {
 
     await updateOrder(updatedOrder);
     setOrder(updatedOrder);
+  };
+
+  const handleAssignEmployee = async (employeeId: string) => {
+    if (!order) return;
+    
+    await assignEmployeeToOrder(order.id, employeeId);
+    await loadOrder();
+    setShowEmployeePicker(false);
+  };
+
+  const handleUnassignEmployee = async () => {
+    if (!order) return;
+    
+    await unassignEmployeeFromOrder(order.id);
+    await loadOrder();
   };
 
   const handleDelete = () => {
@@ -73,6 +102,11 @@ export default function OrderDetailScreen() {
     return STATUS_STEPS.findIndex((s) => s.key === order.status);
   };
 
+  const getAssignedEmployee = () => {
+    if (!order?.assignedEmployeeId) return null;
+    return employees.find(e => e.id === order.assignedEmployeeId);
+  };
+
   if (!order) {
     return (
       <ScreenScrollView>
@@ -87,6 +121,7 @@ export default function OrderDetailScreen() {
 
   const isPaid = order.paidAmount >= order.amount;
   const statusIndex = getStatusIndex();
+  const assignedEmployee = getAssignedEmployee();
 
   return (
     <ScreenScrollView>
@@ -96,6 +131,46 @@ export default function OrderDetailScreen() {
           Customer: {order.customerName}
         </ThemedText>
       </View>
+
+      <ThemedText type="h4" style={styles.sectionTitle}>
+        Assigned Tailor
+      </ThemedText>
+      <Pressable 
+        style={[styles.assignCard, { backgroundColor: theme.backgroundDefault }]}
+        onPress={() => setShowEmployeePicker(true)}
+      >
+        {assignedEmployee ? (
+          <View style={styles.assignedRow}>
+            <View style={[styles.employeeAvatar, { backgroundColor: theme.accent + "20" }]}>
+              <ThemedText type="body" style={{ color: theme.accent }}>
+                {assignedEmployee.name.charAt(0)}
+              </ThemedText>
+            </View>
+            <View style={styles.employeeInfo}>
+              <ThemedText type="body">{assignedEmployee.name}</ThemedText>
+              <ThemedText type="caption" style={{ color: theme.textSecondary, textTransform: "capitalize" }}>
+                {assignedEmployee.role}
+              </ThemedText>
+            </View>
+            <Pressable 
+              style={[styles.unassignButton, { backgroundColor: theme.error + "15" }]}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleUnassignEmployee();
+              }}
+            >
+              <Feather name="x" size={16} color={theme.error} />
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.assignPlaceholder}>
+            <Feather name="user-plus" size={20} color={theme.primary} />
+            <ThemedText type="body" style={{ color: theme.primary }}>
+              Assign a tailor
+            </ThemedText>
+          </View>
+        )}
+      </Pressable>
 
       <ThemedText type="h4" style={styles.sectionTitle}>
         Order Status
@@ -133,14 +208,14 @@ export default function OrderDetailScreen() {
                 >
                   {step.label}
                 </ThemedText>
-                {index < STATUS_STEPS.length - 1 && (
+                {index < STATUS_STEPS.length - 1 ? (
                   <View
                     style={[
                       styles.statusLine,
                       { backgroundColor: index < statusIndex ? theme.completed : theme.border },
                     ]}
                   />
-                )}
+                ) : null}
               </View>
             );
           })}
@@ -295,6 +370,69 @@ export default function OrderDetailScreen() {
           <Feather name="trash-2" size={18} color={theme.error} />
         </Pressable>
       </View>
+
+      <Modal
+        visible={showEmployeePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEmployeePicker(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowEmployeePicker(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText type="h3" style={styles.modalTitle}>
+              Assign Tailor
+            </ThemedText>
+            {employees.length === 0 ? (
+              <View style={styles.modalEmpty}>
+                <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                  No active employees available
+                </ThemedText>
+              </View>
+            ) : (
+              employees.map((employee, index) => (
+                <Pressable
+                  key={employee.id}
+                  style={[
+                    styles.employeeOption,
+                    index < employees.length - 1 && {
+                      borderBottomWidth: 1,
+                      borderBottomColor: theme.border,
+                    },
+                    order.assignedEmployeeId === employee.id && {
+                      backgroundColor: theme.primary + "10",
+                    },
+                  ]}
+                  onPress={() => handleAssignEmployee(employee.id)}
+                >
+                  <View style={[styles.employeeAvatar, { backgroundColor: theme.accent + "20" }]}>
+                    <ThemedText type="body" style={{ color: theme.accent }}>
+                      {employee.name.charAt(0)}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.employeeInfo}>
+                    <ThemedText type="body">{employee.name}</ThemedText>
+                    <ThemedText type="caption" style={{ color: theme.textSecondary, textTransform: "capitalize" }}>
+                      {employee.role} - {employee.assignedOrders.length} orders
+                    </ThemedText>
+                  </View>
+                  {order.assignedEmployeeId === employee.id ? (
+                    <Feather name="check-circle" size={20} color={theme.completed} />
+                  ) : null}
+                </Pressable>
+              ))
+            )}
+            <Pressable
+              style={[styles.modalClose, { backgroundColor: theme.backgroundSecondary }]}
+              onPress={() => setShowEmployeePicker(false)}
+            >
+              <ThemedText type="body">Cancel</ThemedText>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </ScreenScrollView>
   );
 }
@@ -309,6 +447,40 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: Spacing.md,
     marginTop: Spacing.lg,
+  },
+  assignCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+  },
+  assignedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  employeeAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  employeeInfo: {
+    flex: 1,
+    gap: Spacing.xs,
+  },
+  unassignButton: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  assignPlaceholder: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
   },
   statusCard: {
     padding: Spacing.lg,
@@ -407,5 +579,39 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.xl,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    maxHeight: "80%",
+  },
+  modalTitle: {
+    textAlign: "center",
+    marginBottom: Spacing.lg,
+  },
+  modalEmpty: {
+    padding: Spacing["2xl"],
+    alignItems: "center",
+  },
+  employeeOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  modalClose: {
+    marginTop: Spacing.lg,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
   },
 });

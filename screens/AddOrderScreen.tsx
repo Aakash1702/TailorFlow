@@ -12,6 +12,7 @@ import {
   getCustomers,
   addOrder,
   updateOrder,
+  updateCustomerBalance,
   generateId,
   formatCurrency,
 } from "@/utils/storage";
@@ -30,6 +31,7 @@ export default function AddOrderScreen() {
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<OrderItem[]>([]);
+  const [manualAmount, setManualAmount] = useState("");
   const [newItemName, setNewItemName] = useState("");
   const [newItemPrice, setNewItemPrice] = useState("");
   const [newItemQty, setNewItemQty] = useState("1");
@@ -53,6 +55,9 @@ export default function AddOrderScreen() {
         setDueDate(order.dueDate.split("T")[0]);
         setNotes(order.notes || "");
         setItems(order.items);
+        if (order.items.length === 0) {
+          setManualAmount(order.amount.toString());
+        }
       }
     } else {
       const tomorrow = new Date();
@@ -94,7 +99,8 @@ export default function AddOrderScreen() {
     setItems(items.filter((i) => i.id !== itemId));
   };
 
-  const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const itemsTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalAmount = items.length > 0 ? itemsTotal : parseFloat(manualAmount) || 0;
 
   const handleSave = async () => {
     if (!selectedCustomerId) {
@@ -109,6 +115,10 @@ export default function AddOrderScreen() {
       Alert.alert("Required", "Please enter due date");
       return;
     }
+    if (totalAmount <= 0) {
+      Alert.alert("Required", "Please enter order amount or add items");
+      return;
+    }
 
     const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
     if (!selectedCustomer) {
@@ -118,33 +128,45 @@ export default function AddOrderScreen() {
 
     setLoading(true);
     try {
-      const order: Order = {
-        id: orderId || generateId(),
-        customerId: selectedCustomerId,
-        customerName: selectedCustomer.name,
-        description: description.trim(),
-        status: "pending",
-        amount: totalAmount,
-        paidAmount: 0,
-        dueDate: new Date(dueDate).toISOString(),
-        createdAt: new Date().toISOString(),
-        notes: notes.trim() || undefined,
-        items,
-      };
-
       if (isEditing) {
         const orders = await getOrders();
         const existing = orders.find((o) => o.id === orderId);
         if (existing) {
-          order.status = existing.status;
-          order.paidAmount = existing.paidAmount;
-          order.createdAt = existing.createdAt;
-          order.completedAt = existing.completedAt;
-          order.deliveredAt = existing.deliveredAt;
+          const order: Order = {
+            id: orderId,
+            customerId: selectedCustomerId,
+            customerName: selectedCustomer.name,
+            description: description.trim(),
+            status: existing.status,
+            amount: totalAmount,
+            paidAmount: existing.paidAmount,
+            dueDate: new Date(dueDate).toISOString(),
+            createdAt: existing.createdAt,
+            completedAt: existing.completedAt,
+            deliveredAt: existing.deliveredAt,
+            assignedEmployeeId: existing.assignedEmployeeId,
+            notes: notes.trim() || undefined,
+            items,
+          };
+          await updateOrder(order);
+          await updateCustomerBalance(selectedCustomerId);
         }
-        await updateOrder(order);
       } else {
+        const order: Order = {
+          id: generateId(),
+          customerId: selectedCustomerId,
+          customerName: selectedCustomer.name,
+          description: description.trim(),
+          status: "pending",
+          amount: totalAmount,
+          paidAmount: 0,
+          dueDate: new Date(dueDate).toISOString(),
+          createdAt: new Date().toISOString(),
+          notes: notes.trim() || undefined,
+          items,
+        };
         await addOrder(order);
+        await updateCustomerBalance(selectedCustomerId);
       }
 
       navigation.goBack();
@@ -245,7 +267,30 @@ export default function AddOrderScreen() {
       </View>
 
       <ThemedText type="h4" style={styles.sectionTitle}>
-        Order Items
+        Order Amount
+      </ThemedText>
+      <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
+        <View style={styles.inputRow}>
+          <ThemedText type="body">Total Amount *</ThemedText>
+          <TextInput
+            style={[styles.amountInput, { color: theme.text }]}
+            placeholder="Enter amount"
+            placeholderTextColor={theme.textSecondary}
+            value={items.length > 0 ? formatCurrency(itemsTotal) : manualAmount}
+            onChangeText={setManualAmount}
+            keyboardType="decimal-pad"
+            editable={items.length === 0}
+          />
+          {items.length > 0 ? (
+            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+              Calculated from items below
+            </ThemedText>
+          ) : null}
+        </View>
+      </View>
+
+      <ThemedText type="h4" style={styles.sectionTitle}>
+        Order Items (Optional)
       </ThemedText>
       <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
         <View style={styles.addItemRow}>
@@ -306,7 +351,7 @@ export default function AddOrderScreen() {
             <View style={styles.totalRow}>
               <ThemedText type="h4">Total</ThemedText>
               <ThemedText type="h3" style={{ color: theme.primary }}>
-                {formatCurrency(totalAmount)}
+                {formatCurrency(itemsTotal)}
               </ThemedText>
             </View>
           </>
@@ -391,6 +436,11 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
+    padding: 0,
+  },
+  amountInput: {
+    fontSize: 24,
+    fontWeight: "600",
     padding: 0,
   },
   divider: {
