@@ -75,6 +75,8 @@ export async function saveCustomers(customers: Customer[]): Promise<void> {
   }
 }
 
+export const setCustomers = saveCustomers;
+
 export async function addCustomer(customer: Customer): Promise<void> {
   const customers = await getCustomers();
   customers.unshift(customer);
@@ -113,6 +115,8 @@ export async function saveOrders(orders: Order[]): Promise<void> {
     console.error('Error saving orders:', error);
   }
 }
+
+export const setOrders = saveOrders;
 
 export async function addOrder(order: Order): Promise<void> {
   const orders = await getOrders();
@@ -194,6 +198,8 @@ export async function saveEmployees(employees: Employee[]): Promise<void> {
   }
 }
 
+export const setEmployees = saveEmployees;
+
 export async function addEmployee(employee: Employee): Promise<void> {
   const employees = await getEmployees();
   employees.unshift(employee);
@@ -232,6 +238,8 @@ export async function savePayments(payments: Payment[]): Promise<void> {
     console.error('Error saving payments:', error);
   }
 }
+
+export const setPayments = savePayments;
 
 export async function addPayment(payment: Payment): Promise<void> {
   const payments = await getPayments();
