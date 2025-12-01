@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   KeyboardAwareScrollView,
 } from 'react-native-keyboard-controller';
+import { Provider } from '@supabase/supabase-js';
 import { useAuth } from '../contexts/AuthContext';
 import { ThemedText } from '../components/ThemedText';
 import { Button } from '../components/Button';
@@ -21,10 +22,24 @@ import { Colors, Spacing, BorderRadius, Typography } from '../constants/theme';
 
 type AuthMode = 'login' | 'signup' | 'forgotPassword';
 
+type OAuthProvider = {
+  id: Provider;
+  name: string;
+  icon: string;
+  color: string;
+  textColor: string;
+};
+
+const oauthProviders: OAuthProvider[] = [
+  { id: 'google', name: 'Google', icon: 'globe', color: '#FFFFFF', textColor: '#1F1F1F' },
+  { id: 'apple', name: 'Apple', icon: 'smartphone', color: '#000000', textColor: '#FFFFFF' },
+  { id: 'github', name: 'GitHub', icon: 'github', color: '#24292F', textColor: '#FFFFFF' },
+];
+
 export function AuthScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { signIn, signUp, signInWithOAuth, resetPassword } = useAuth();
   
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
@@ -34,8 +49,22 @@ export function AuthScreen() {
   const [shopName, setShopName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handleOAuthSignIn = async (provider: Provider) => {
+    setOauthLoading(provider);
+    setError(null);
+
+    const { error } = await signInWithOAuth(provider);
+    
+    if (error) {
+      setError(error.message);
+    }
+    
+    setOauthLoading(null);
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -106,6 +135,53 @@ export function AuthScreen() {
     
     setIsLoading(false);
   };
+
+  const renderOAuthButtons = () => (
+    <View style={styles.oauthContainer}>
+      <View style={styles.dividerContainer}>
+        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+        <ThemedText style={[styles.dividerText, { color: theme.textSecondary }]}>
+          or continue with
+        </ThemedText>
+        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+      </View>
+      
+      <View style={styles.oauthButtons}>
+        {oauthProviders.map((provider) => (
+          <Pressable
+            key={provider.id}
+            style={({ pressed }) => [
+              styles.oauthButton,
+              { 
+                backgroundColor: provider.color,
+                borderColor: provider.id === 'google' ? theme.border : provider.color,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+            onPress={() => handleOAuthSignIn(provider.id)}
+            disabled={oauthLoading !== null}
+          >
+            {oauthLoading === provider.id ? (
+              <ActivityIndicator size="small" color={provider.textColor} />
+            ) : (
+              <>
+                <Feather 
+                  name={provider.icon as any} 
+                  size={20} 
+                  color={provider.textColor} 
+                />
+                <ThemedText 
+                  style={[styles.oauthButtonText, { color: provider.textColor }]}
+                >
+                  {provider.name}
+                </ThemedText>
+              </>
+            )}
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
 
   const renderForm = () => {
     if (mode === 'forgotPassword') {
@@ -246,6 +322,8 @@ export function AuthScreen() {
               </ThemedText>
             </Pressable>
           </View>
+
+          {renderOAuthButtons()}
         </>
       );
     }
@@ -312,6 +390,8 @@ export function AuthScreen() {
             </ThemedText>
           </Pressable>
         </View>
+
+        {renderOAuthButtons()}
       </>
     );
   };
@@ -467,5 +547,37 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: Typography.small.fontSize,
     fontWeight: '600',
+  },
+  oauthContainer: {
+    marginTop: Spacing.xl,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    paddingHorizontal: Spacing.md,
+    fontSize: Typography.small.fontSize,
+  },
+  oauthButtons: {
+    gap: Spacing.md,
+  },
+  oauthButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: Spacing.inputHeight,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    gap: Spacing.sm,
+  },
+  oauthButtonText: {
+    fontSize: Typography.body.fontSize,
+    fontWeight: '500',
   },
 });

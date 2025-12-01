@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, Provider } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+import { Platform } from 'react-native';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export type UserProfile = {
   id: string;
@@ -28,6 +33,7 @@ type AuthContextType = {
   isOnline: boolean;
   signUp: (email: string, password: string, fullName?: string, shopName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithOAuth: (provider: Provider) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
@@ -179,6 +185,87 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithOAuth = async (provider: Provider): Promise<{ error: Error | null }> => {
+    try {
+      const redirectTo = AuthSession.makeRedirectUri({
+        scheme: 'tailorflow',
+        path: 'auth/callback',
+      });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) {
+        return { error };
+      }
+
+      if (data?.url) {
+        if (Platform.OS === 'web') {
+          window.location.href = data.url;
+          return { error: null };
+        } else {
+          const result = await WebBrowser.openAuthSessionAsync(
+            data.url,
+            redirectTo
+          );
+
+          if (result.type === 'cancel' || result.type === 'dismiss') {
+            return { error: new Error('Sign-in was cancelled') };
+          }
+
+          if (result.type === 'success' && result.url) {
+            const url = new URL(result.url);
+            
+            const hashParams = new URLSearchParams(url.hash.substring(1));
+            const queryParams = new URLSearchParams(url.search);
+            
+            const errorDescription = hashParams.get('error_description') || queryParams.get('error_description');
+            if (errorDescription) {
+              return { error: new Error(decodeURIComponent(errorDescription)) };
+            }
+            
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
+            
+            if (accessToken && refreshToken) {
+              const { error: sessionError } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+
+              if (sessionError) {
+                return { error: sessionError };
+              }
+              return { error: null };
+            }
+            
+            const code = queryParams.get('code');
+            if (code) {
+              const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+              if (exchangeError) {
+                return { error: exchangeError };
+              }
+              return { error: null };
+            }
+            
+            return { error: new Error('Authentication failed - no valid response received') };
+          }
+
+          return { error: new Error('Authentication failed') };
+        }
+      }
+
+      return { error: new Error('Failed to initiate authentication') };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -190,6 +277,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isOnline,
         signUp,
         signIn,
+        signInWithOAuth,
         signOut,
         resetPassword,
         refreshProfile,
