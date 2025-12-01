@@ -44,23 +44,49 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Storage
 
-**Local Storage:** AsyncStorage for all data persistence
-- No backend server or database integration
-- All data stored in JSON format on device
-- Storage keys namespaced with `tailorflow_` prefix
+**Supabase Cloud Database** - Full enterprise database with:
+- 10 tables with proper relationships and foreign keys
+- Row Level Security (RLS) policies for multi-tenant data isolation
+- Automatic shop/profile provisioning on user signup
+- Real-time data sync across devices
 
-**Data Models:**
-- Customers: Profile, measurements, contact info, outstanding balance
-- Orders: Items, status workflow, assignments, payment tracking
-- Employees: Role-based (Admin/Manager/Tailor), task assignments
-- Payments: Multiple payment modes, order associations
-- Activities: System-wide activity logging for dashboard
+**Database Tables:**
+- `shops` - Owner information and shop settings
+- `profiles` - Links users to shops with role-based access
+- `customers` - Customer data with measurements (JSONB)
+- `orders` - Order workflow with status tracking
+- `order_items` - Individual items in orders
+- `order_item_extras` - Add-ons for order items
+- `employees` - Staff management with assignments
+- `payments` - Payment records with multiple modes
+- `activities` - Activity feed for dashboard
+- `extras_presets` - Pre-configured extras options
+
+**Offline Support:**
+- AsyncStorage as local cache for offline access
+- Automatic sync to Supabase when online
+- Local ID remapping on sync
 
 **Data Operations:**
-- CRUD operations implemented as async utility functions
-- ID generation using timestamp-based unique identifiers
-- Cascading updates for related entities (e.g., customer balance from orders)
-- No data validation library - basic validation in UI layer
+- CRUD via SupabaseDataService with shop_id scoping
+- Cascading deletes via foreign key constraints
+- Customer balance auto-calculated from orders
+- Activity logging for all significant actions
+
+### Supabase Setup (REQUIRED)
+
+**To see all tables in Supabase dashboard:**
+1. Go to your Supabase project dashboard
+2. Click "SQL Editor" in the left sidebar
+3. Click "New Query"
+4. Copy the entire contents of `supabase-schema.sql` 
+5. Click "Run" to execute the schema
+6. Check "Table Editor" - you should now see all 10 tables
+
+**Database trigger automatically:**
+- Creates a new `shop` when a user signs up
+- Creates a `profile` linking user to their shop
+- Adds default extras presets for the new shop
 
 ### Authentication & Authorization
 

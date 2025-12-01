@@ -198,11 +198,11 @@ export class SupabaseDataService {
     const employees = (data || []).map(this.mapSupabaseEmployee);
     
     const orders = await this.getOrders();
-    return employees.map(emp => ({
+    return employees.map((emp: Employee) => ({
       ...emp,
       assignedOrders: orders
-        .filter(o => o.assignedEmployeeId === emp.id)
-        .map(o => o.id),
+        .filter((o: Order) => o.assignedEmployeeId === emp.id)
+        .map((o: Order) => o.id),
     }));
   }
 
@@ -555,7 +555,7 @@ export class SupabaseDataService {
       .eq('customer_id', customerId);
 
     const outstandingBalance = (ordersData || []).reduce(
-      (sum, o) => sum + (o.amount - o.paid_amount),
+      (sum: number, o: { amount: number; paid_amount: number }) => sum + (o.amount - o.paid_amount),
       0
     );
 
