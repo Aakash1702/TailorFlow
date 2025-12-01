@@ -6,14 +6,15 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenFlatList } from "@/components/ScreenFlatList";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useData } from "@/contexts/DataContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { EmployeesStackParamList } from "@/navigation/EmployeesStackNavigator";
-import { getEmployees, getOrders } from "@/utils/storage";
 import { Employee } from "@/types";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 export default function EmployeesScreen() {
   const { theme } = useTheme();
+  const { getEmployees } = useData();
   const navigation = useNavigation<NativeStackNavigationProp<EmployeesStackParamList>>();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -22,7 +23,7 @@ export default function EmployeesScreen() {
   const loadEmployees = useCallback(async () => {
     const data = await getEmployees();
     setEmployees(data);
-  }, []);
+  }, [getEmployees]);
 
   useFocusEffect(
     useCallback(() => {

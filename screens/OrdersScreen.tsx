@@ -6,9 +6,10 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenFlatList } from "@/components/ScreenFlatList";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useData } from "@/contexts/DataContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { OrdersStackParamList } from "@/navigation/OrdersStackNavigator";
-import { getOrders, formatCurrency, formatDate } from "@/utils/storage";
+import { formatCurrency, formatDate } from "@/utils/storage";
 import { Order, OrderStatus } from "@/types";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
@@ -22,6 +23,7 @@ const STATUS_FILTERS: { key: OrderStatus | "all"; label: string }[] = [
 
 export default function OrdersScreen() {
   const { theme } = useTheme();
+  const { getOrders } = useData();
   const navigation = useNavigation<NativeStackNavigationProp<OrdersStackParamList>>();
   const [orders, setOrders] = useState<Order[]>([]);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
@@ -31,7 +33,7 @@ export default function OrdersScreen() {
   const loadOrders = useCallback(async () => {
     const data = await getOrders();
     setOrders(data);
-  }, []);
+  }, [getOrders]);
 
   useFocusEffect(
     useCallback(() => {

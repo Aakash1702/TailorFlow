@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable, RefreshControl } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -6,9 +6,10 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useData } from "@/contexts/DataContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { getOrders, getPayments, getActivities, formatCurrency, getRelativeTime } from "@/utils/storage";
-import { DashboardStats, ActivityItem, Order } from "@/types";
+import { formatCurrency, getRelativeTime } from "@/utils/storage";
+import { DashboardStats, ActivityItem } from "@/types";
 
 type RootTabParamList = {
   DashboardTab: undefined;
@@ -20,6 +21,7 @@ type RootTabParamList = {
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
+  const { getOrders, getPayments, getActivities, isOnline, isSyncing } = useData();
   const navigation = useNavigation<NativeStackNavigationProp<RootTabParamList>>();
   const [stats, setStats] = useState<DashboardStats>({
     activeOrders: 0,
@@ -61,7 +63,7 @@ export default function DashboardScreen() {
       pendingPayments,
     });
     setRecentActivity(activities.slice(0, 5));
-  }, []);
+  }, [getOrders, getPayments, getActivities]);
 
   useFocusEffect(
     useCallback(() => {

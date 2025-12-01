@@ -5,22 +5,20 @@ import { useFocusEffect } from "@react-navigation/native";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useData } from "@/contexts/DataContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
-  getUserName,
   setUserName,
-  getShopName,
   setShopName,
   clearAllData,
-  getCustomers,
-  getOrders,
-  getEmployees,
-  getPayments,
   formatCurrency,
 } from "@/utils/storage";
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
+  const { getCustomers, getOrders, getEmployees, getPayments, getUserName, getShopName } = useData();
+  const { signOut, user, profile, shop } = useAuth();
   const [userName, setUserNameState] = useState("");
   const [shopName, setShopNameState] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -34,9 +32,9 @@ export default function SettingsScreen() {
 
   const loadSettings = useCallback(async () => {
     const name = await getUserName();
-    const shop = await getShopName();
+    const shopNameValue = await getShopName();
     setUserNameState(name);
-    setShopNameState(shop);
+    setShopNameState(shopNameValue);
 
     const customers = await getCustomers();
     const orders = await getOrders();
@@ -50,7 +48,7 @@ export default function SettingsScreen() {
       employees: employees.length,
       revenue: totalRevenue,
     });
-  }, []);
+  }, [getCustomers, getOrders, getEmployees, getPayments, getUserName, getShopName]);
 
   useFocusEffect(
     useCallback(() => {
@@ -316,6 +314,55 @@ export default function SettingsScreen() {
           </ThemedText>
         </View>
       </View>
+
+      {user ? (
+        <>
+          <ThemedText type="h4" style={styles.sectionTitle}>
+            Account
+          </ThemedText>
+          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={styles.aboutRow}>
+              <ThemedText type="body">Signed in as</ThemedText>
+              <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                {user.email}
+              </ThemedText>
+            </View>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <Pressable
+              style={({ pressed }) => [styles.actionRow, { opacity: pressed ? 0.8 : 1 }]}
+              onPress={() => {
+                Alert.alert(
+                  "Sign Out",
+                  "Are you sure you want to sign out?",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Sign Out",
+                      style: "destructive",
+                      onPress: async () => {
+                        await signOut();
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: theme.error + "15" }]}>
+                <Feather name="log-out" size={18} color={theme.error} />
+              </View>
+              <View style={styles.actionContent}>
+                <ThemedText type="body" style={{ color: theme.error }}>
+                  Sign Out
+                </ThemedText>
+                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+                  Sign out of your account
+                </ThemedText>
+              </View>
+              <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+            </Pressable>
+          </View>
+        </>
+      ) : null}
 
       <View style={styles.footer}>
         <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center" }}>

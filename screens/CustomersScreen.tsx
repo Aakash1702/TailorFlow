@@ -6,15 +6,17 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenFlatList } from "@/components/ScreenFlatList";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useData } from "@/contexts/DataContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { CustomersStackParamList } from "@/navigation/CustomersStackNavigator";
-import { getCustomers, formatCurrency, formatDate } from "@/utils/storage";
+import { formatCurrency } from "@/utils/storage";
 import { Customer } from "@/types";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CustomersScreen() {
   const { theme } = useTheme();
+  const { getCustomers } = useData();
   const navigation = useNavigation<NativeStackNavigationProp<CustomersStackParamList>>();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,7 +27,7 @@ export default function CustomersScreen() {
   const loadCustomers = useCallback(async () => {
     const data = await getCustomers();
     setCustomers(data);
-  }, []);
+  }, [getCustomers]);
 
   useFocusEffect(
     useCallback(() => {

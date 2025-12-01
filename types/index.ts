@@ -1,7 +1,24 @@
 export type OrderStatus = 'pending' | 'inProgress' | 'completed' | 'delivered';
 
+export interface Shop {
+  id: string;
+  name: string;
+  created_at: string;
+  owner_id: string;
+}
+
+export interface Profile {
+  id: string;
+  user_id: string;
+  shop_id: string;
+  full_name: string;
+  role: 'owner' | 'manager' | 'tailor';
+  created_at: string;
+}
+
 export interface Customer {
   id: string;
+  shop_id?: string;
   name: string;
   phone: string;
   email?: string;
@@ -27,6 +44,7 @@ export interface Measurements {
 
 export interface Order {
   id: string;
+  shop_id?: string;
   customerId: string;
   customerName: string;
   description: string;
@@ -59,6 +77,7 @@ export interface OrderItem {
 
 export interface ExtrasPreset {
   id: string;
+  shop_id?: string;
   label: string;
   amount: number;
   category: 'design' | 'material' | 'finishing' | 'other';
@@ -66,6 +85,7 @@ export interface ExtrasPreset {
 
 export interface Employee {
   id: string;
+  shop_id?: string;
   name: string;
   phone: string;
   email?: string;
@@ -77,6 +97,7 @@ export interface Employee {
 
 export interface Payment {
   id: string;
+  shop_id?: string;
   orderId: string;
   customerId: string;
   customerName: string;

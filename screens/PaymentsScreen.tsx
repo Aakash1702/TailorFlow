@@ -6,9 +6,10 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenFlatList } from "@/components/ScreenFlatList";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
+import { useData } from "@/contexts/DataContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { MoreStackParamList } from "@/navigation/MoreStackNavigator";
-import { getPayments, getOrders, formatCurrency, formatDate, getRelativeTime } from "@/utils/storage";
+import { formatCurrency, formatDate, getRelativeTime } from "@/utils/storage";
 import { Payment, Order } from "@/types";
 
 type PaymentFilter = "all" | "today" | "week" | "month";
@@ -22,6 +23,7 @@ const FILTERS: { key: PaymentFilter; label: string }[] = [
 
 export default function PaymentsScreen() {
   const { theme } = useTheme();
+  const { getPayments, getOrders } = useData();
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -33,7 +35,7 @@ export default function PaymentsScreen() {
     const orderData = await getOrders();
     setPayments(paymentData);
     setOrders(orderData);
-  }, []);
+  }, [getPayments, getOrders]);
 
   useFocusEffect(
     useCallback(() => {
