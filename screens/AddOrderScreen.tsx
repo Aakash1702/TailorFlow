@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, TextInput, Pressable, Alert, Modal, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
@@ -27,6 +28,7 @@ export default function AddOrderScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<OrdersStackParamList, "AddOrder">>();
+  const insets = useSafeAreaInsets();
   const orderId = route.params?.orderId;
   const isEditing = !!orderId;
 
@@ -502,123 +504,125 @@ export default function AddOrderScreen() {
         </ThemedText>
       </Pressable>
 
-      <Modal visible={showItemModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={[styles.modalHandle, { backgroundColor: theme.border }]} />
-            <View style={styles.modalHeader}>
-              <ThemedText type="h3">{editingItemId ? "Edit Item" : "Add Item"}</ThemedText>
-              <Pressable onPress={() => setShowItemModal(false)}>
-                <Feather name="x" size={24} color={theme.text} />
+      <Modal visible={showItemModal} animationType="slide" transparent={false}>
+        <View style={[styles.modalContainer, { backgroundColor: theme.backgroundDefault, paddingTop: insets.top }]}>
+          <View style={styles.modalHeader}>
+            <ThemedText type="h3">{editingItemId ? "Edit Item" : "Add Item"}</ThemedText>
+            <Pressable onPress={() => setShowItemModal(false)}>
+              <Feather name="x" size={24} color={theme.text} />
+            </Pressable>
+          </View>
+
+          <ScrollView 
+            style={[styles.modalScroll, { backgroundColor: theme.backgroundDefault }]} 
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={[styles.inputGroup, { backgroundColor: theme.backgroundSecondary }]}>
+              <View style={styles.inputRow}>
+                <ThemedText type="body">Item Name *</ThemedText>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  placeholder="e.g., Saree Blouse"
+                  placeholderTextColor={theme.textSecondary}
+                  value={itemName}
+                  onChangeText={setItemName}
+                />
+              </View>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <View style={styles.inputRow}>
+                <ThemedText type="body">Base Price *</ThemedText>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  placeholder="e.g., 500"
+                  placeholderTextColor={theme.textSecondary}
+                  value={itemBasePrice}
+                  onChangeText={setItemBasePrice}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <View style={styles.inputRow}>
+                <ThemedText type="body">Quantity</ThemedText>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  placeholder="1"
+                  placeholderTextColor={theme.textSecondary}
+                  value={itemQty}
+                  onChangeText={setItemQty}
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
+
+            <ThemedText type="h4" style={styles.sectionTitle}>
+              Add-ons / Extras
+            </ThemedText>
+            <View style={styles.extrasChips}>
+              {extrasPresets.map((preset) => {
+                const isSelected = selectedExtras.some(e => e.label === preset.label);
+                return (
+                  <Pressable
+                    key={preset.id}
+                    style={[
+                      styles.chip,
+                      { borderColor: isSelected ? theme.accent : theme.border, backgroundColor: isSelected ? theme.accent + "20" : theme.backgroundSecondary },
+                    ]}
+                    onPress={() => toggleExtra(preset)}
+                  >
+                    <ThemedText type="caption" style={{ color: isSelected ? theme.accent : theme.text }}>
+                      {preset.label} (+{formatCurrency(preset.amount)})
+                    </ThemedText>
+                    {isSelected ? <Feather name="check" size={14} color={theme.accent} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <ThemedText type="body" style={{ marginTop: Spacing.lg, marginBottom: Spacing.sm }}>
+              Custom Extra
+            </ThemedText>
+            <View style={styles.customExtraRow}>
+              <TextInput
+                style={[styles.customExtraInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.backgroundSecondary, flex: 2 }]}
+                placeholder="Name"
+                placeholderTextColor={theme.textSecondary}
+                value={customExtraLabel}
+                onChangeText={setCustomExtraLabel}
+              />
+              <TextInput
+                style={[styles.customExtraInput, { color: theme.text, borderColor: theme.border, backgroundColor: theme.backgroundSecondary, flex: 1 }]}
+                placeholder="Amount"
+                placeholderTextColor={theme.textSecondary}
+                value={customExtraAmount}
+                onChangeText={setCustomExtraAmount}
+                keyboardType="decimal-pad"
+              />
+              <Pressable style={[styles.addExtraBtn, { backgroundColor: theme.accent }]} onPress={addCustomExtra}>
+                <Feather name="plus" size={18} color="#FFFFFF" />
               </Pressable>
             </View>
 
-            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              <View style={[styles.inputGroup, { backgroundColor: theme.backgroundSecondary }]}>
-                <View style={styles.inputRow}>
-                  <ThemedText type="body">Item Name *</ThemedText>
-                  <TextInput
-                    style={[styles.input, { color: theme.text }]}
-                    placeholder="e.g., Saree Blouse"
-                    placeholderTextColor={theme.textSecondary}
-                    value={itemName}
-                    onChangeText={setItemName}
-                  />
-                </View>
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                <View style={styles.inputRow}>
-                  <ThemedText type="body">Base Price *</ThemedText>
-                  <TextInput
-                    style={[styles.input, { color: theme.text }]}
-                    placeholder="e.g., 500"
-                    placeholderTextColor={theme.textSecondary}
-                    value={itemBasePrice}
-                    onChangeText={setItemBasePrice}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
-                <View style={styles.inputRow}>
-                  <ThemedText type="body">Quantity</ThemedText>
-                  <TextInput
-                    style={[styles.input, { color: theme.text }]}
-                    placeholder="1"
-                    placeholderTextColor={theme.textSecondary}
-                    value={itemQty}
-                    onChangeText={setItemQty}
-                    keyboardType="number-pad"
-                  />
-                </View>
-              </View>
-
-              <ThemedText type="h4" style={styles.sectionTitle}>
-                Add-ons / Extras
-              </ThemedText>
-              <View style={styles.extrasChips}>
-                {extrasPresets.map((preset) => {
-                  const isSelected = selectedExtras.some(e => e.label === preset.label);
-                  return (
-                    <Pressable
-                      key={preset.id}
-                      style={[
-                        styles.chip,
-                        { borderColor: isSelected ? theme.accent : theme.border },
-                        isSelected && { backgroundColor: theme.accent + "15" },
-                      ]}
-                      onPress={() => toggleExtra(preset)}
-                    >
-                      <ThemedText type="caption" style={{ color: isSelected ? theme.accent : theme.text }}>
-                        {preset.label} (+{formatCurrency(preset.amount)})
-                      </ThemedText>
-                      {isSelected ? <Feather name="check" size={14} color={theme.accent} /> : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <ThemedText type="body" style={{ marginTop: Spacing.lg, marginBottom: Spacing.sm }}>
-                Custom Extra
-              </ThemedText>
-              <View style={styles.customExtraRow}>
-                <TextInput
-                  style={[styles.customExtraInput, { color: theme.text, borderColor: theme.border, flex: 2 }]}
-                  placeholder="Name"
-                  placeholderTextColor={theme.textSecondary}
-                  value={customExtraLabel}
-                  onChangeText={setCustomExtraLabel}
-                />
-                <TextInput
-                  style={[styles.customExtraInput, { color: theme.text, borderColor: theme.border, flex: 1 }]}
-                  placeholder="Amount"
-                  placeholderTextColor={theme.textSecondary}
-                  value={customExtraAmount}
-                  onChangeText={setCustomExtraAmount}
-                  keyboardType="decimal-pad"
-                />
-                <Pressable style={[styles.addExtraBtn, { backgroundColor: theme.accent }]} onPress={addCustomExtra}>
-                  <Feather name="plus" size={18} color="#FFFFFF" />
-                </Pressable>
-              </View>
-
-              {selectedExtras.length > 0 ? (
-                <View style={[styles.selectedExtras, { backgroundColor: theme.backgroundSecondary }]}>
-                  <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
-                    Selected Extras:
-                  </ThemedText>
-                  {selectedExtras.map((extra) => (
-                    <View key={extra.id} style={styles.selectedExtraRow}>
-                      <ThemedText type="body">{extra.label}</ThemedText>
-                      <View style={styles.selectedExtraRight}>
-                        <ThemedText type="body">{formatCurrency(extra.amount)}</ThemedText>
-                        <Pressable onPress={() => removeExtra(extra.id)} hitSlop={8}>
-                          <Feather name="x-circle" size={18} color={theme.error} />
-                        </Pressable>
-                      </View>
+            {selectedExtras.length > 0 ? (
+              <View style={[styles.selectedExtras, { backgroundColor: theme.backgroundSecondary }]}>
+                <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
+                  Selected Extras:
+                </ThemedText>
+                {selectedExtras.map((extra) => (
+                  <View key={extra.id} style={styles.selectedExtraRow}>
+                    <ThemedText type="body">{extra.label}</ThemedText>
+                    <View style={styles.selectedExtraRight}>
+                      <ThemedText type="body">{formatCurrency(extra.amount)}</ThemedText>
+                      <Pressable onPress={() => removeExtra(extra.id)} hitSlop={8}>
+                        <Feather name="x-circle" size={18} color={theme.error} />
+                      </Pressable>
                     </View>
-                  ))}
-                </View>
-              ) : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
 
+            <View style={[styles.inputGroup, { backgroundColor: theme.backgroundSecondary, marginTop: Spacing.lg }]}>
               <View style={styles.inputRow}>
                 <ThemedText type="body">Item Notes</ThemedText>
                 <TextInput
@@ -629,13 +633,15 @@ export default function AddOrderScreen() {
                   onChangeText={setItemNotes}
                 />
               </View>
+            </View>
 
-              <View style={[styles.itemPreview, { backgroundColor: theme.primary + "10" }]}>
-                <ThemedText type="h4">Item Total</ThemedText>
-                <ThemedText type="h2" style={{ color: theme.primary }}>{formatCurrency(currentItemTotal)}</ThemedText>
-              </View>
-            </ScrollView>
+            <View style={[styles.itemPreview, { backgroundColor: theme.primary + "15" }]}>
+              <ThemedText type="h4">Item Total</ThemedText>
+              <ThemedText type="h2" style={{ color: theme.primary }}>{formatCurrency(currentItemTotal)}</ThemedText>
+            </View>
+          </ScrollView>
 
+          <View style={[styles.modalFooter, { backgroundColor: theme.backgroundDefault, borderTopColor: theme.border, paddingBottom: Math.max(insets.bottom, Spacing.lg) }]}>
             <Pressable style={[styles.modalSaveBtn, { backgroundColor: theme.primary }]} onPress={saveItem}>
               <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
                 {editingItemId ? "Update Item" : "Add Item"}
@@ -764,33 +770,27 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     alignItems: "center",
   },
-  modalOverlay: {
+  modalContainer: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    maxHeight: "90%",
-    paddingTop: Spacing.sm,
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: Spacing.sm,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.lg,
+    paddingTop: Spacing.md,
   },
   modalScroll: {
+    flex: 1,
+  },
+  modalScrollContent: {
     paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
+  },
+  modalFooter: {
+    padding: Spacing.lg,
+    borderTopWidth: 1,
   },
   extrasChips: {
     flexDirection: "row",
@@ -850,7 +850,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   modalSaveBtn: {
-    margin: Spacing.lg,
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
     alignItems: "center",
