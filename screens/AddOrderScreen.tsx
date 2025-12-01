@@ -504,7 +504,8 @@ export default function AddOrderScreen() {
 
       <Modal visible={showItemModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundRoot }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={[styles.modalHandle, { backgroundColor: theme.border }]} />
             <View style={styles.modalHeader}>
               <ThemedText type="h3">{editingItemId ? "Edit Item" : "Add Item"}</ThemedText>
               <Pressable onPress={() => setShowItemModal(false)}>
@@ -513,7 +514,7 @@ export default function AddOrderScreen() {
             </View>
 
             <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-              <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
+              <View style={[styles.inputGroup, { backgroundColor: theme.backgroundSecondary }]}>
                 <View style={styles.inputRow}>
                   <ThemedText type="body">Item Name *</ThemedText>
                   <TextInput
@@ -600,7 +601,7 @@ export default function AddOrderScreen() {
               </View>
 
               {selectedExtras.length > 0 ? (
-                <View style={[styles.selectedExtras, { backgroundColor: theme.backgroundDefault }]}>
+                <View style={[styles.selectedExtras, { backgroundColor: theme.backgroundSecondary }]}>
                   <ThemedText type="caption" style={{ color: theme.textSecondary, marginBottom: Spacing.sm }}>
                     Selected Extras:
                   </ThemedText>
@@ -765,14 +766,21 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "flex-end",
   },
   modalContent: {
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     maxHeight: "90%",
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.sm,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: Spacing.sm,
   },
   modalHeader: {
     flexDirection: "row",
