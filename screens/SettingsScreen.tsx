@@ -18,7 +18,7 @@ import {
 export default function SettingsScreen() {
   const { theme } = useTheme();
   const { getCustomers, getOrders, getEmployees, getPayments, getUserName, getShopName } = useData();
-  const { signOut, user, profile, shop } = useAuth();
+  const { signOut, user, session, profile, shop } = useAuth();
   const [userName, setUserNameState] = useState("");
   const [shopName, setShopNameState] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -315,18 +315,40 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      {user ? (
-        <>
-          <ThemedText type="h4" style={styles.sectionTitle}>
-            Account
-          </ThemedText>
-          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText type="h4" style={styles.sectionTitle}>
+        Account
+      </ThemedText>
+      <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+        {session?.user?.email || user?.email || profile?.email ? (
+          <>
             <View style={styles.aboutRow}>
               <ThemedText type="body">Signed in as</ThemedText>
-              <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                {user.email}
+              <ThemedText type="body" style={{ color: theme.textSecondary, flex: 1, textAlign: "right" }} numberOfLines={1}>
+                {session?.user?.email || user?.email || profile?.email}
               </ThemedText>
             </View>
+            {profile?.full_name ? (
+              <>
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                <View style={styles.aboutRow}>
+                  <ThemedText type="body">Name</ThemedText>
+                  <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                    {profile.full_name}
+                  </ThemedText>
+                </View>
+              </>
+            ) : null}
+            {shop?.name ? (
+              <>
+                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                <View style={styles.aboutRow}>
+                  <ThemedText type="body">Shop</ThemedText>
+                  <ThemedText type="body" style={{ color: theme.textSecondary }}>
+                    {shop.name}
+                  </ThemedText>
+                </View>
+              </>
+            ) : null}
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <Pressable
               style={({ pressed }) => [styles.actionRow, { opacity: pressed ? 0.8 : 1 }]}
@@ -360,9 +382,15 @@ export default function SettingsScreen() {
               </View>
               <Feather name="chevron-right" size={20} color={theme.textSecondary} />
             </Pressable>
+          </>
+        ) : (
+          <View style={styles.aboutRow}>
+            <ThemedText type="body" style={{ color: theme.textSecondary }}>
+              Not signed in
+            </ThemedText>
           </View>
-        </>
-      ) : null}
+        )}
+      </View>
 
       <View style={styles.footer}>
         <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center" }}>
