@@ -1,5 +1,5 @@
 entrypoint = "README.md"
-modules = ["nodejs-22"]
+modules = ["nodejs-22", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
@@ -23,6 +23,10 @@ externalPort = 3002
 [[ports]]
 localPort = 40435
 externalPort = 3003
+
+[[ports]]
+localPort = 43145
+externalPort = 4200
 
 [workflows]
 runButton = "Project"
