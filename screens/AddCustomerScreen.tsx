@@ -7,13 +7,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { CustomersStackParamList } from "@/navigation/CustomersStackNavigator";
-import { getCustomers, addCustomer, updateCustomer, generateId } from "@/utils/storage";
+import { useData } from "@/contexts/DataContext";
 import { Customer, Measurements } from "@/types";
 
 export default function AddCustomerScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<CustomersStackParamList, "AddCustomer">>();
+  const { getCustomers, addCustomer, updateCustomer } = useData();
   const customerId = route.params?.customerId;
   const isEditing = !!customerId;
 
@@ -56,32 +57,36 @@ export default function AddCustomerScreen() {
 
     setLoading(true);
     try {
-      const customer: Customer = {
-        id: customerId || generateId(),
-        name: name.trim(),
-        phone: phone.trim(),
-        email: email.trim() || undefined,
-        address: address.trim() || undefined,
-        notes: notes.trim() || undefined,
-        measurements,
-        createdAt: isEditing ? new Date().toISOString() : new Date().toISOString(),
-        outstandingBalance: 0,
-      };
-
-      if (isEditing) {
+      if (isEditing && customerId) {
         const customers = await getCustomers();
         const existing = customers.find((c) => c.id === customerId);
         if (existing) {
-          customer.outstandingBalance = existing.outstandingBalance;
-          customer.createdAt = existing.createdAt;
+          const customer: Customer = {
+            ...existing,
+            name: name.trim(),
+            phone: phone.trim(),
+            email: email.trim() || undefined,
+            address: address.trim() || undefined,
+            notes: notes.trim() || undefined,
+            measurements,
+          };
+          await updateCustomer(customer);
         }
-        await updateCustomer(customer);
       } else {
-        await addCustomer(customer);
+        await addCustomer({
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim() || undefined,
+          address: address.trim() || undefined,
+          notes: notes.trim() || undefined,
+          measurements,
+          outstandingBalance: 0,
+        });
       }
 
       navigation.goBack();
     } catch (error) {
+      console.error('Failed to save customer:', error);
       Alert.alert("Error", "Failed to save customer");
     } finally {
       setLoading(false);

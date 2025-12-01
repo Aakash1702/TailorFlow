@@ -142,6 +142,140 @@ CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
 CREATE INDEX IF NOT EXISTS idx_activities_shop_id ON activities(shop_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_shop_id ON profiles(shop_id);
 
+-- ========================================
+-- ROW LEVEL SECURITY (RLS) POLICIES
+-- ========================================
+
+-- Enable RLS on all tables
+ALTER TABLE shops ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_item_extras ENABLE ROW LEVEL SECURITY;
+ALTER TABLE extras_presets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
+
+-- Shops policies: Users can only access their own shop
+DROP POLICY IF EXISTS "Users can view own shop" ON shops;
+CREATE POLICY "Users can view own shop" ON shops FOR SELECT USING (owner_id = auth.uid());
+DROP POLICY IF EXISTS "Users can update own shop" ON shops;
+CREATE POLICY "Users can update own shop" ON shops FOR UPDATE USING (owner_id = auth.uid());
+DROP POLICY IF EXISTS "Users can insert own shop" ON shops;
+CREATE POLICY "Users can insert own shop" ON shops FOR INSERT WITH CHECK (owner_id = auth.uid());
+
+-- Profiles policies: Users can access their own profile
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (id = auth.uid());
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (id = auth.uid());
+DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
+CREATE POLICY "Users can insert own profile" ON profiles FOR INSERT WITH CHECK (id = auth.uid());
+
+-- Helper function to get user's shop_id
+CREATE OR REPLACE FUNCTION get_user_shop_id()
+RETURNS UUID AS $$
+  SELECT shop_id FROM profiles WHERE id = auth.uid()
+$$ LANGUAGE SQL SECURITY DEFINER STABLE;
+
+-- Customers policies: Users can only access customers in their shop
+DROP POLICY IF EXISTS "Users can view shop customers" ON customers;
+CREATE POLICY "Users can view shop customers" ON customers FOR SELECT USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can insert shop customers" ON customers;
+CREATE POLICY "Users can insert shop customers" ON customers FOR INSERT WITH CHECK (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can update shop customers" ON customers;
+CREATE POLICY "Users can update shop customers" ON customers FOR UPDATE USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can delete shop customers" ON customers;
+CREATE POLICY "Users can delete shop customers" ON customers FOR DELETE USING (shop_id = get_user_shop_id());
+
+-- Employees policies
+DROP POLICY IF EXISTS "Users can view shop employees" ON employees;
+CREATE POLICY "Users can view shop employees" ON employees FOR SELECT USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can insert shop employees" ON employees;
+CREATE POLICY "Users can insert shop employees" ON employees FOR INSERT WITH CHECK (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can update shop employees" ON employees;
+CREATE POLICY "Users can update shop employees" ON employees FOR UPDATE USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can delete shop employees" ON employees;
+CREATE POLICY "Users can delete shop employees" ON employees FOR DELETE USING (shop_id = get_user_shop_id());
+
+-- Orders policies
+DROP POLICY IF EXISTS "Users can view shop orders" ON orders;
+CREATE POLICY "Users can view shop orders" ON orders FOR SELECT USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can insert shop orders" ON orders;
+CREATE POLICY "Users can insert shop orders" ON orders FOR INSERT WITH CHECK (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can update shop orders" ON orders;
+CREATE POLICY "Users can update shop orders" ON orders FOR UPDATE USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can delete shop orders" ON orders;
+CREATE POLICY "Users can delete shop orders" ON orders FOR DELETE USING (shop_id = get_user_shop_id());
+
+-- Order items policies (via order's shop_id)
+DROP POLICY IF EXISTS "Users can view order items" ON order_items;
+CREATE POLICY "Users can view order items" ON order_items FOR SELECT USING (
+  EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.shop_id = get_user_shop_id())
+);
+DROP POLICY IF EXISTS "Users can insert order items" ON order_items;
+CREATE POLICY "Users can insert order items" ON order_items FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.shop_id = get_user_shop_id())
+);
+DROP POLICY IF EXISTS "Users can update order items" ON order_items;
+CREATE POLICY "Users can update order items" ON order_items FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.shop_id = get_user_shop_id())
+);
+DROP POLICY IF EXISTS "Users can delete order items" ON order_items;
+CREATE POLICY "Users can delete order items" ON order_items FOR DELETE USING (
+  EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND orders.shop_id = get_user_shop_id())
+);
+
+-- Order item extras policies (via order item's order's shop_id)
+DROP POLICY IF EXISTS "Users can view order item extras" ON order_item_extras;
+CREATE POLICY "Users can view order item extras" ON order_item_extras FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM order_items oi 
+    JOIN orders o ON o.id = oi.order_id 
+    WHERE oi.id = order_item_extras.order_item_id AND o.shop_id = get_user_shop_id()
+  )
+);
+DROP POLICY IF EXISTS "Users can insert order item extras" ON order_item_extras;
+CREATE POLICY "Users can insert order item extras" ON order_item_extras FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM order_items oi 
+    JOIN orders o ON o.id = oi.order_id 
+    WHERE oi.id = order_item_extras.order_item_id AND o.shop_id = get_user_shop_id()
+  )
+);
+DROP POLICY IF EXISTS "Users can delete order item extras" ON order_item_extras;
+CREATE POLICY "Users can delete order item extras" ON order_item_extras FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM order_items oi 
+    JOIN orders o ON o.id = oi.order_id 
+    WHERE oi.id = order_item_extras.order_item_id AND o.shop_id = get_user_shop_id()
+  )
+);
+
+-- Extras presets policies
+DROP POLICY IF EXISTS "Users can view shop extras presets" ON extras_presets;
+CREATE POLICY "Users can view shop extras presets" ON extras_presets FOR SELECT USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can insert shop extras presets" ON extras_presets;
+CREATE POLICY "Users can insert shop extras presets" ON extras_presets FOR INSERT WITH CHECK (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can update shop extras presets" ON extras_presets;
+CREATE POLICY "Users can update shop extras presets" ON extras_presets FOR UPDATE USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can delete shop extras presets" ON extras_presets;
+CREATE POLICY "Users can delete shop extras presets" ON extras_presets FOR DELETE USING (shop_id = get_user_shop_id());
+
+-- Payments policies
+DROP POLICY IF EXISTS "Users can view shop payments" ON payments;
+CREATE POLICY "Users can view shop payments" ON payments FOR SELECT USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can insert shop payments" ON payments;
+CREATE POLICY "Users can insert shop payments" ON payments FOR INSERT WITH CHECK (shop_id = get_user_shop_id());
+
+-- Activities policies
+DROP POLICY IF EXISTS "Users can view shop activities" ON activities;
+CREATE POLICY "Users can view shop activities" ON activities FOR SELECT USING (shop_id = get_user_shop_id());
+DROP POLICY IF EXISTS "Users can insert shop activities" ON activities;
+CREATE POLICY "Users can insert shop activities" ON activities FOR INSERT WITH CHECK (shop_id = get_user_shop_id());
+
 -- Updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
