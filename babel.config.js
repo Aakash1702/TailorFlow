@@ -1,5 +1,5 @@
 module.exports = function (api) {
-  api.cache(true);
+  api.cache.invalidate(() => `${process.env.SUPABASE_URL}-${process.env.SUPABASE_ANON_KEY}`);
   
   const plugins = [
     [
