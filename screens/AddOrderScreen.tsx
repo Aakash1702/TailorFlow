@@ -504,7 +504,7 @@ export default function AddOrderScreen() {
 
       <Modal visible={showItemModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundRoot }]}>
             <View style={styles.modalHeader}>
               <ThemedText type="h3">{editingItemId ? "Edit Item" : "Add Item"}</ThemedText>
               <Pressable onPress={() => setShowItemModal(false)}>
