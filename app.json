@@ -8,6 +8,10 @@
     "scheme": "tailorflow",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "extra": {
+      "supabaseUrl": "${SUPABASE_URL}",
+      "supabaseAnonKey": "${SUPABASE_ANON_KEY}"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tailorflow.app"
