@@ -69,15 +69,15 @@ export default function OrdersScreen() {
       >
         <View style={styles.orderHeader}>
           <View style={styles.orderInfo}>
-            <ThemedText type="h4" numberOfLines={1}>
+            <ThemedText type="h4" numberOfLines={1} style={{ flexShrink: 1 }}>
               {item.description}
             </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary }}>
+            <ThemedText type="small" numberOfLines={1} style={{ color: theme.textSecondary }}>
               {item.customerName}
             </ThemedText>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + "15" }]}>
-            <ThemedText type="caption" style={{ color: getStatusColor(item.status), textTransform: "capitalize" }}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + "15", flexShrink: 0 }]}>
+            <ThemedText type="caption" numberOfLines={1} style={{ color: getStatusColor(item.status), textTransform: "capitalize" }}>
               {item.status === "inProgress" ? "In Progress" : item.status}
             </ThemedText>
           </View>
@@ -85,16 +85,16 @@ export default function OrdersScreen() {
         <View style={styles.orderFooter}>
           <View style={styles.orderMeta}>
             <Feather name="calendar" size={14} color={isOverdue ? theme.error : theme.textSecondary} />
-            <ThemedText type="caption" style={{ color: isOverdue ? theme.error : theme.textSecondary }}>
+            <ThemedText type="caption" numberOfLines={1} style={{ color: isOverdue ? theme.error : theme.textSecondary, flexShrink: 1 }}>
               Due {formatDate(item.dueDate)}
             </ThemedText>
           </View>
           <View style={styles.orderAmount}>
-            <ThemedText type="body" style={{ color: theme.primary, fontWeight: "600" }}>
+            <ThemedText type="body" numberOfLines={1} style={{ color: theme.primary, fontWeight: "600" }}>
               {formatCurrency(item.amount)}
             </ThemedText>
             {!isPaid ? (
-              <ThemedText type="caption" style={{ color: theme.error }}>
+              <ThemedText type="caption" numberOfLines={1} style={{ color: theme.error }}>
                 {formatCurrency(item.amount - item.paidAmount)} due
               </ThemedText>
             ) : null}
@@ -217,15 +217,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
+    gap: Spacing.md,
   },
   orderMeta: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
+    flex: 1,
+    minWidth: 0,
   },
   orderAmount: {
     alignItems: "flex-end",
     gap: Spacing.xs,
+    flexShrink: 0,
   },
   emptyState: {
     alignItems: "center",
