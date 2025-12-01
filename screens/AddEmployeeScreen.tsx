@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { EmployeesStackParamList } from "@/navigation/EmployeesStackNavigator";
-import { getEmployees, addEmployee, updateEmployee, generateId } from "@/utils/storage";
+import { useData } from "@/contexts/DataContext";
 import { Employee } from "@/types";
 
 const ROLES: { key: Employee["role"]; label: string }[] = [
@@ -20,6 +20,7 @@ export default function AddEmployeeScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<EmployeesStackParamList, "AddEmployee">>();
+  const { getEmployees, addEmployee, updateEmployee } = useData();
   const employeeId = route.params?.employeeId;
   const isEditing = !!employeeId;
 
@@ -37,7 +38,7 @@ export default function AddEmployeeScreen() {
 
   const loadEmployee = async () => {
     const employees = await getEmployees();
-    const employee = employees.find((e) => e.id === employeeId);
+    const employee = employees.find((e: Employee) => e.id === employeeId);
     if (employee) {
       setName(employee.name);
       setPhone(employee.phone);
@@ -58,28 +59,27 @@ export default function AddEmployeeScreen() {
 
     setLoading(true);
     try {
-      const employee: Employee = {
-        id: employeeId || generateId(),
-        name: name.trim(),
-        phone: phone.trim(),
-        email: email.trim() || undefined,
-        role,
-        assignedOrders: [],
-        joinedAt: new Date().toISOString(),
-        isActive: true,
-      };
-
       if (isEditing) {
         const employees = await getEmployees();
-        const existing = employees.find((e) => e.id === employeeId);
+        const existing = employees.find((e: Employee) => e.id === employeeId);
         if (existing) {
-          employee.assignedOrders = existing.assignedOrders;
-          employee.joinedAt = existing.joinedAt;
-          employee.isActive = existing.isActive;
+          await updateEmployee({
+            ...existing,
+            name: name.trim(),
+            phone: phone.trim(),
+            email: email.trim() || undefined,
+            role,
+          });
         }
-        await updateEmployee(employee);
       } else {
-        await addEmployee(employee);
+        await addEmployee({
+          name: name.trim(),
+          phone: phone.trim(),
+          email: email.trim() || undefined,
+          role,
+          assignedOrders: [],
+          isActive: true,
+        });
       }
 
       navigation.goBack();

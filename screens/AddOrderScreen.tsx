@@ -8,15 +8,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { OrdersStackParamList } from "@/navigation/OrdersStackNavigator";
+import { useData } from "@/contexts/DataContext";
 import {
-  getOrders,
-  getCustomers,
-  getEmployees,
-  getExtrasPresets,
-  addOrder,
-  updateOrder,
-  updateCustomerBalance,
-  assignEmployeeToOrder,
   calculateItemTotal,
   calculateOrderTotal,
   generateId,
@@ -29,6 +22,7 @@ export default function AddOrderScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<OrdersStackParamList, "AddOrder">>();
   const insets = useSafeAreaInsets();
+  const { getCustomers, getEmployees, getExtrasPresets, getOrders, addOrder, updateOrder, updateCustomerBalance, assignEmployeeToOrder } = useData();
   const orderId = route.params?.orderId;
   const isEditing = !!orderId;
 
@@ -64,20 +58,20 @@ export default function AddOrderScreen() {
     setCustomers(customerData);
     
     const employeeData = await getEmployees();
-    setEmployees(employeeData.filter(e => e.isActive));
+    setEmployees(employeeData.filter((e: Employee) => e.isActive));
     
     const presets = await getExtrasPresets();
     setExtrasPresets(presets);
 
     if (orderId) {
       const orders = await getOrders();
-      const order = orders.find((o) => o.id === orderId);
+      const order = orders.find((o: Order) => o.id === orderId);
       if (order) {
         setSelectedCustomerId(order.customerId);
         setDescription(order.description);
         setDueDate(order.dueDate.split("T")[0]);
         setNotes(order.notes || "");
-        const migratedItems = order.items.map(item => ({
+        const migratedItems = order.items.map((item: OrderItem) => ({
           ...item,
           basePrice: (item as any).basePrice ?? (item as any).price ?? 0,
           extras: item.extras || [],
@@ -218,35 +212,27 @@ export default function AddOrderScreen() {
     try {
       if (isEditing) {
         const orders = await getOrders();
-        const existing = orders.find((o) => o.id === orderId);
+        const existing = orders.find((o: Order) => o.id === orderId);
         if (existing) {
-          const order: Order = {
-            id: orderId,
+          await updateOrder({
+            ...existing,
             customerId: selectedCustomerId,
             customerName: selectedCustomer.name,
             description: description.trim(),
-            status: existing.status,
             amount: totalAmount,
-            paidAmount: existing.paidAmount,
             dueDate: new Date(dueDate).toISOString(),
-            createdAt: existing.createdAt,
-            completedAt: existing.completedAt,
-            deliveredAt: existing.deliveredAt,
             assignedEmployeeId: selectedEmployeeId || undefined,
             notes: notes.trim() || undefined,
             items,
-          };
-          await updateOrder(order);
-          await updateCustomerBalance(selectedCustomerId);
+          });
+          await updateCustomerBalance(selectedCustomerId, 0);
           
           if (selectedEmployeeId && selectedEmployeeId !== existing.assignedEmployeeId) {
-            await assignEmployeeToOrder(order.id, selectedEmployeeId);
+            await assignEmployeeToOrder(existing.id, selectedEmployeeId);
           }
         }
       } else {
-        const newOrderId = generateId();
-        const order: Order = {
-          id: newOrderId,
+        const newOrder = await addOrder({
           customerId: selectedCustomerId,
           customerName: selectedCustomer.name,
           description: description.trim(),
@@ -254,16 +240,14 @@ export default function AddOrderScreen() {
           amount: totalAmount,
           paidAmount: 0,
           dueDate: new Date(dueDate).toISOString(),
-          createdAt: new Date().toISOString(),
           assignedEmployeeId: selectedEmployeeId || undefined,
           notes: notes.trim() || undefined,
           items,
-        };
-        await addOrder(order);
-        await updateCustomerBalance(selectedCustomerId);
+        });
+        await updateCustomerBalance(selectedCustomerId, 0);
         
         if (selectedEmployeeId) {
-          await assignEmployeeToOrder(newOrderId, selectedEmployeeId);
+          await assignEmployeeToOrder(newOrder.id, selectedEmployeeId);
         }
       }
 

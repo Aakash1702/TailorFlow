@@ -7,7 +7,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { MoreStackParamList } from "@/navigation/MoreStackNavigator";
-import { getOrders, addPayment, generateId, formatCurrency } from "@/utils/storage";
+import { useData } from "@/contexts/DataContext";
+import { formatCurrency } from "@/utils/storage";
 import { Order, Payment } from "@/types";
 
 const PAYMENT_MODES: { key: Payment["paymentMode"]; label: string; icon: string }[] = [
@@ -22,6 +23,7 @@ export default function AddPaymentScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<MoreStackParamList, "AddPayment">>();
+  const { getOrders, addPayment } = useData();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState(route.params?.orderId || "");
@@ -37,7 +39,7 @@ export default function AddPaymentScreen() {
 
   const loadOrders = async () => {
     const data = await getOrders();
-    const unpaidOrders = data.filter((o) => o.amount > o.paidAmount);
+    const unpaidOrders = data.filter((o: Order) => o.amount > o.paidAmount);
     setOrders(unpaidOrders);
   };
 
@@ -66,18 +68,15 @@ export default function AddPaymentScreen() {
 
     setLoading(true);
     try {
-      const payment: Payment = {
-        id: generateId(),
+      await addPayment({
         orderId: selectedOrderId,
         customerId: selectedOrder.customerId,
         customerName: selectedOrder.customerName,
         amount: amountValue,
         paymentMode,
-        createdAt: new Date().toISOString(),
         notes: notes.trim() || undefined,
-      };
+      });
 
-      await addPayment(payment);
       navigation.goBack();
     } catch (error) {
       Alert.alert("Error", "Failed to record payment");
