@@ -64,17 +64,23 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication & Authorization
 
-**Current State:** Placeholder implementation
-- Login state stored in AsyncStorage (USER_LOGGED_IN key)
-- User name and shop name storage for personalization
-- No actual authentication flow implemented
+**Supabase Authentication** - Fully implemented
+- Email/password authentication with signup, login, logout
+- OAuth providers: Google, Apple, GitHub
+- Uses expo-auth-session with web-based OAuth flow compatible with Expo Go
+- PKCE flow with `exchangeCodeForSession` for secure token exchange
+- Password reset via email link
 
-**Designed Architecture (from design_guidelines.md):**
-- Email/password authentication planned
-- Role-based access control: Admin, Tailor, Manager
-- "Remember Me" functionality
-- First-time user onboarding for shop setup
-- Account deletion restricted to Admin role
+**OAuth Implementation:**
+- AuthContext provides `signInWithOAuth(provider)` method
+- Handles both token-based and authorization code flows
+- Proper error handling for cancellation and provider errors
+- Deep linking configured with `tailorflow://` scheme
+
+**Session Management:**
+- Supabase session stored automatically
+- AuthContext provides user state and loading indicator
+- Auto-refreshes session on app launch
 
 ### Business Logic
 
@@ -136,6 +142,26 @@ Preferred communication style: Simple, everyday language.
 - Static hosting with QR code landing page for mobile access
 
 ## Recent Changes
+
+**December 1, 2025 - OAuth Authentication**
+
+1. **OAuth Sign-in Implementation**
+   - Added Google, Apple, and GitHub OAuth providers via Supabase
+   - Uses expo-auth-session with web-based flow for Expo Go compatibility
+   - Properly handles PKCE authorization code exchange
+   - Error handling for cancellation and provider errors
+
+2. **AuthScreen UI Updates**
+   - Added OAuth buttons section with provider-specific styling
+   - Google: White background with Google logo
+   - Apple: Black background with Apple logo
+   - GitHub: Dark gray background with GitHub logo
+   - "or continue with" divider between email and OAuth
+
+3. **AuthContext Improvements**
+   - signInWithOAuth method supports all three providers
+   - Handles both token-based and authorization code flows
+   - Proper session establishment after OAuth callback
 
 **November 28, 2025 - MVP Complete**
 
