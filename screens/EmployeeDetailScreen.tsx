@@ -8,13 +8,15 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { EmployeesStackParamList } from "@/navigation/EmployeesStackNavigator";
-import { getEmployees, getOrders, updateEmployee, deleteEmployee, formatDate } from "@/utils/storage";
+import { useData } from "@/contexts/DataContext";
+import { formatDate } from "@/utils/storage";
 import { Employee, Order } from "@/types";
 
 export default function EmployeeDetailScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<EmployeesStackParamList>>();
   const route = useRoute<RouteProp<EmployeesStackParamList, "EmployeeDetail">>();
+  const { getEmployees, getOrders, updateEmployee, deleteEmployee } = useData();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [assignedOrders, setAssignedOrders] = useState<Order[]>([]);
 
@@ -28,7 +30,7 @@ export default function EmployeeDetailScreen() {
       const assigned = orders.filter((o) => found.assignedOrders.includes(o.id));
       setAssignedOrders(assigned);
     }
-  }, [route.params.employeeId]);
+  }, [route.params.employeeId, getEmployees, getOrders]);
 
   useFocusEffect(
     useCallback(() => {

@@ -8,13 +8,15 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { CustomersStackParamList } from "@/navigation/CustomersStackNavigator";
-import { getCustomers, getOrders, formatCurrency, formatDate, deleteCustomer } from "@/utils/storage";
+import { useData } from "@/contexts/DataContext";
+import { formatCurrency, formatDate } from "@/utils/storage";
 import { Customer, Order } from "@/types";
 
 export default function CustomerDetailScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<CustomersStackParamList>>();
   const route = useRoute<RouteProp<CustomersStackParamList, "CustomerDetail">>();
+  const { getCustomers, getOrders, deleteCustomer } = useData();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
 
@@ -26,7 +28,7 @@ export default function CustomerDetailScreen() {
     const orders = await getOrders();
     const filtered = orders.filter((o) => o.customerId === route.params.customerId);
     setCustomerOrders(filtered);
-  }, [route.params.customerId]);
+  }, [route.params.customerId, getCustomers, getOrders]);
 
   useFocusEffect(
     useCallback(() => {
