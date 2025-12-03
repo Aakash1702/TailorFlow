@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, TextInput, Pressable, Alert, Modal, ScrollView } from "react-native";
+import { View, StyleSheet, TextInput, Pressable, Alert, Modal, ScrollView, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -39,6 +40,7 @@ export default function AddOrderScreen() {
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
   const [showEmployeePicker, setShowEmployeePicker] = useState(false);
   
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [itemName, setItemName] = useState("");
@@ -183,6 +185,31 @@ export default function AddOrderScreen() {
   };
 
   const totalAmount = calculateOrderTotal(items);
+
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (event.type === 'set' && selectedDate) {
+      setDueDate(selectedDate.toISOString().split('T')[0]);
+      if (Platform.OS === 'ios') {
+        setShowDatePicker(false);
+      }
+    } else if (event.type === 'dismissed') {
+      setShowDatePicker(false);
+    }
+  };
+
+  const formatDisplayDate = (dateStr: string) => {
+    if (!dateStr) return 'Select date';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
 
   const handleSave = async () => {
     if (!selectedCustomerId) {
@@ -389,14 +416,36 @@ export default function AddOrderScreen() {
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <View style={styles.inputRow}>
           <ThemedText type="body">Due Date *</ThemedText>
-          <TextInput
-            style={[styles.input, { color: theme.text }]}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={theme.textSecondary}
-            value={dueDate}
-            onChangeText={setDueDate}
-          />
+          <Pressable
+            style={[styles.datePickerButton, { backgroundColor: theme.backgroundSecondary }]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Feather name="calendar" size={18} color={theme.primary} />
+            <ThemedText type="body" style={styles.dateText}>
+              {formatDisplayDate(dueDate)}
+            </ThemedText>
+          </Pressable>
         </View>
+        {showDatePicker && (
+          <View style={styles.datePickerContainer}>
+            <DateTimePicker
+              value={dueDate ? new Date(dueDate) : new Date()}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleDateChange}
+              minimumDate={new Date()}
+              themeVariant="dark"
+            />
+            {Platform.OS === 'ios' && (
+              <Pressable 
+                style={[styles.dateConfirmButton, { backgroundColor: theme.primary }]}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <ThemedText type="body" style={{ color: '#FFFFFF' }}>Done</ThemedText>
+              </Pressable>
+            )}
+          </View>
+        )}
       </View>
 
       <View style={styles.itemsHeader}>
@@ -837,5 +886,27 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
     alignItems: "center",
+  },
+  datePickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    marginTop: Spacing.xs,
+  },
+  dateText: {
+    flex: 1,
+  },
+  datePickerContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  dateConfirmButton: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+    marginTop: Spacing.sm,
   },
 });
