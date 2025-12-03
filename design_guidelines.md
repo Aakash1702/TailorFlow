@@ -3,261 +3,249 @@
 ## Architecture Decisions
 
 ### Authentication
-**Auth Required** - This is a business management platform with role-based access control (Admin, Tailor, Manager).
+**Auth Required** - Business management platform with role-based access (Admin, Tailor, Manager).
 
 **Implementation:**
-- Use email/password authentication (business context makes SSO less critical)
-- Include "Remember Me" option for convenience
-- Login screen displays TailorFlow logo prominently
-- Post-login onboarding for first-time users to set up shop details
+- Email/password authentication with "Remember Me" option
+- Login screen with TailorFlow logo and clean form design
+- Post-login onboarding for shop setup
 - Account screen includes:
-  - User profile with role badge (Admin/Tailor/Manager)
-  - Shop settings (business name, contact info)
+  - User profile with role badge
+  - Shop settings
   - Log out with confirmation
-  - Delete account nested under Settings > Account > Delete (Admin only)
+  - Delete account (Admin only, nested under Settings > Account > Delete with double confirmation)
 
 ### Navigation Structure
-**Tab Navigation** (5 tabs) with the following hierarchy:
+**Tab Navigation** (5 tabs) with core action positioned center:
 
-1. **Dashboard** (Home icon) - Overview and quick stats
-2. **Customers** (Users icon) - Customer management
-3. **Orders** (Shopping bag icon, CENTER) - Core action for creating/managing orders
-4. **Employees** (Briefcase icon) - Employee and task management
-5. **More** (Menu icon) - Payments, Analytics, Settings
+1. **Dashboard** (home) - Business overview
+2. **Customers** (users) - Customer management
+3. **Orders** (shopping-bag, CENTER) - Core order creation/management
+4. **Employees** (briefcase) - Staff and tasks
+5. **More** (menu) - Payments, Analytics, Inventory, Settings
 
-**Information Architecture:**
-- Orders tab is the central feature (primary business activity)
-- More tab contains secondary features: Payments, Analytics, Inventory, Settings
-- All screens use stack navigation within their respective tabs
-
-### Root-Level Modals
-- Create/Edit Order (full-screen modal from Orders tab FAB)
-- Create/Edit Customer (modal from Customers tab)
-- Create/Edit Employee (modal from Employees tab)
-- Invoice Detail (modal from Payments)
-- Filter/Search panels (slide-in modals)
+**Root-Level Modals:**
+- Create/Edit Order (full-screen from Orders FAB)
+- Create/Edit Customer
+- Create/Edit Employee
+- Invoice Detail
+- Filter panels (slide-in)
 
 ## Screen Specifications
 
-### 1. Dashboard (Home Tab)
-**Purpose:** Quick overview of business health and navigation hub
+### 1. Dashboard
+**Purpose:** Business health snapshot and quick navigation
 
 **Layout:**
-- **Header:** Custom transparent header with "TailorFlow" wordmark and notification bell (right)
-- **Main Content:** Scrollable view with safe area insets: top = headerHeight + Spacing.xl, bottom = tabBarHeight + Spacing.xl
+- **Header:** Transparent custom header with "TailorFlow" wordmark (left), notification bell (right)
+- **Main Content:** ScrollView with safe area insets: top = headerHeight + Spacing.lg, bottom = tabBarHeight + Spacing.lg
 - **Structure:**
-  - Stats Card Grid (2x2): Active Orders, Completed Today, Today's Revenue, Pending Payments
-  - Quick Actions Section: 6 navigation cards in 2x3 grid linking to Customers, Orders, Employees, Payments, Inventory, Analytics
-  - Recent Activity Feed (last 5 orders with status indicators)
+  - Stats grid (2x2): Active Orders, Completed Today, Revenue, Pending Payments
+  - Quick Actions grid (2x3): Navigation cards to Customers, Orders, Employees, Payments, Inventory, Analytics
+  - Recent Activity feed (last 5 orders with status)
 
-**Components:**
-- Stat cards with large numbers, icon, and subtle background tint
-- Navigation cards with Feather icons and labels
-- List items with avatar/icon, text, and timestamp
+**Components:** Stat cards with large numbers and subtle gradient backgrounds, navigation cards with icons, activity list items
 
-### 2. Customer Management
-**Purpose:** View, search, and manage customer profiles
+### 2. Customers
+**Purpose:** Search and manage customer profiles
 
 **Layout:**
-- **Header:** Default navigation header with search bar and "Add Customer" button (right, plus icon)
-- **Main Content:** FlatList with safe area insets: bottom = tabBarHeight + Spacing.xl
-- **Structure:**
-  - Search bar (sticky at top when scrolling)
-  - Customer cards showing name, phone, last order date, outstanding balance
+- **Header:** Default with search bar, "Add" button (right, plus icon)
+- **Main Content:** FlatList with safe area insets: bottom = tabBarHeight + Spacing.lg
+- **Structure:** Searchable customer cards showing name, phone, last order, balance
 
-**Customer Detail Screen:**
-- Stack navigation modal
-- Tabs: Profile, Measurements, Orders, Images, Notes
-- Header has Edit button (right, edit icon)
-- Scrollable content with safe area insets: bottom = insets.bottom + Spacing.xl
+**Customer Detail:** Stack navigation with tabs (Profile, Measurements, Orders, Images, Notes), Edit button in header
 
-### 3. Order Management
-**Purpose:** Create and track tailoring orders through their lifecycle
+### 3. Orders
+**Purpose:** Track orders through lifecycle
 
 **Layout:**
-- **Header:** Default navigation header with filter button (right, filter icon)
-- **Main Content:** FlatList with safe area insets: bottom = tabBarHeight + Spacing.xl
-- **Floating Action Button:** Positioned bottom-right with safe area inset: bottom = tabBarHeight + Spacing.xl, right = Spacing.xl
-  - Shadow specifications: shadowOffset {width: 0, height: 2}, shadowOpacity: 0.10, shadowRadius: 2
-- **Structure:**
-  - Status filter chips (Pending, In Progress, Completed, Delivered)
-  - Order cards with customer name, order ID, status badge, due date, and thumbnail
+- **Header:** Default with filter button (right)
+- **Main Content:** FlatList with safe area insets: bottom = tabBarHeight + Spacing.lg
+- **FAB:** Bottom-right, insets: bottom = tabBarHeight + Spacing.lg, right = Spacing.lg
+  - Shadow: offset {width: 0, height: 2}, opacity: 0.10, radius: 2
+- **Structure:** Status chips (horizontal scroll), order cards with customer, ID, status, due date
 
-**Create/Edit Order Modal:**
-- Full-screen modal with custom header (Cancel left, Save right)
-- Scrollable form with sections: Customer Selection, Order Details, Measurements, Images, Notes, Pricing
-- Submit button at bottom of form (not in header)
-- Safe area insets: top = Spacing.xl, bottom = insets.bottom + Spacing.xl
+**Create/Edit Order Modal:** Full-screen with custom header (Cancel/Save), scrollable form, submit button below form, insets: top = Spacing.lg, bottom = insets.bottom + Spacing.lg
 
-**Order Detail Screen:**
-- Stack navigation
-- Status stepper showing progress: Pending → In Progress → Completed → Delivered
-- Collapsible sections for details, customer info, measurements, images
-- Action buttons: Update Status, Edit Order, Generate Invoice
+**Order Detail:** Stack navigation with status stepper, collapsible sections, action buttons (Update Status, Edit, Generate Invoice)
 
-### 4. Employee Management
-**Purpose:** Manage staff, assign tasks, track attendance
+### 4. Employees
+**Purpose:** Manage staff and assignments
 
 **Layout:**
-- **Header:** Default navigation header with "Add Employee" button (right, plus icon)
-- **Main Content:** FlatList with safe area insets: bottom = tabBarHeight + Spacing.xl
-- **Structure:**
-  - Employee cards with avatar, name, role badge, current tasks count, and performance indicator
+- **Header:** Default with "Add Employee" button (right)
+- **Main Content:** FlatList with safe area insets: bottom = tabBarHeight + Spacing.lg
+- **Structure:** Employee cards with avatar, name, role, task count, performance indicator
 
-**Employee Detail Screen:**
-- Tabs: Profile, Assigned Tasks, Attendance, Payroll
-- Task list showing order assignments with due dates and status
-- Header has Edit button (right)
+**Employee Detail:** Tabs (Profile, Tasks, Attendance, Payroll), Edit button in header
 
-### 5. More Tab
-**Purpose:** Access to Payments, Analytics, Inventory, and Settings
+### 5. More
+**Purpose:** Secondary features access
 
 **Layout:**
-- **Header:** Custom transparent header with "More" title
-- **Main Content:** Scrollable view with safe area insets: top = headerHeight + Spacing.xl, bottom = tabBarHeight + Spacing.xl
-- **Structure:**
-  - Menu list items with icons, labels, and chevron-right indicators
-  - Sections: Financial (Payments, Analytics), Inventory, Account (Settings, Profile, Log Out)
+- **Header:** Transparent custom with "More" title
+- **Main Content:** ScrollView with safe area insets: top = headerHeight + Spacing.lg, bottom = tabBarHeight + Spacing.lg
+- **Structure:** Sectioned menu list (Financial: Payments, Analytics; Inventory; Account: Settings, Profile, Log Out)
 
-### 6. Payments Screen
-**Purpose:** Invoice generation, payment tracking, financial summaries
+### 6. Payments
+**Purpose:** Invoice generation and payment tracking
 
 **Layout:**
-- **Header:** Default navigation header with "Create Invoice" button (right)
-- **Main Content:** ScrollView with tabs: Outstanding, Paid, All
-- **Structure:**
-  - Revenue summary card at top (daily/weekly/monthly filters)
-  - Payment list items with customer name, amount, payment mode, status badge
+- **Header:** Default with "Create Invoice" button (right)
+- **Main Content:** ScrollView with tabs (Outstanding, Paid, All)
+- **Structure:** Revenue summary card, payment list items
 
-**Invoice Detail Modal:**
-- Full-screen modal with header
-- Itemized charges table
-- Payment mode selection
-- Action buttons: Send Invoice, Record Payment, Download PDF
+**Invoice Modal:** Full-screen with itemized table, payment mode selector, action buttons
 
-### 7. Analytics & Reports
-**Purpose:** Business insights and performance metrics
+### 7. Analytics
+**Purpose:** Business insights and metrics
 
 **Layout:**
-- **Header:** Default navigation header with date range selector (right)
-- **Main Content:** Scrollable view with safe area insets: bottom = insets.bottom + Spacing.xl
-- **Structure:**
-  - Revenue chart (line graph, 7-day or 30-day view)
-  - KPI cards: Total Orders, Total Revenue, Average Order Value, Completion Rate
-  - Top customers list
-  - Employee performance comparison
+- **Header:** Default with date range selector (right)
+- **Main Content:** ScrollView with safe area insets: bottom = insets.bottom + Spacing.lg
+- **Structure:** Revenue chart (line graph), KPI cards, top customers, employee performance
 
 ## Design System
 
 ### Color Palette
-**Primary:** 
-- Maroon/Burgundy: #8B4049 (primary actions, active states)
-- Soft Gold: #D4AF37 (accents, success states)
-
-**Neutrals:**
-- Background: #FAFAFA (app background)
-- Surface: #FFFFFF (cards, modals)
-- Text Primary: #1A1A1A
-- Text Secondary: #6B6B6B
-- Border: #E5E5E5
+**Light Theme (Primary):**
+- **Accent Primary:** #6366F1 (Indigo) - main actions, active states
+- **Accent Secondary:** #EC4899 (Pink) - highlights, secondary actions
+- **Background:** #FAFBFC
+- **Surface:** #FFFFFF
+- **Text Primary:** #0F172A
+- **Text Secondary:** #64748B
+- **Border:** #E2E8F0
+- **Overlay:** rgba(15, 23, 42, 0.5)
 
 **Status Colors:**
-- Pending: #F59E0B (amber)
-- In Progress: #3B82F6 (blue)
-- Completed: #10B981 (green)
-- Delivered: #8B5CF6 (purple)
-- Overdue: #EF4444 (red)
+- Pending: #F59E0B
+- In Progress: #3B82F6
+- Completed: #10B981
+- Delivered: #8B5CF6
+- Overdue: #EF4444
+
+**Soft-Dark Theme (Optional):**
+- Background: #0F172A
+- Surface: #1E293B
+- Text Primary: #F1F5F9
+- Text Secondary: #94A3B8
+- Border: #334155
 
 ### Typography
-**Font Family:** Poppins (primary), System fallback
+**Font Family:** Inter (primary), System fallback
 
 **Scale:**
-- Heading 1: 28pt, SemiBold (Dashboard title)
-- Heading 2: 22pt, SemiBold (Section headers)
-- Heading 3: 18pt, Medium (Card titles)
-- Body: 16pt, Regular (Primary text)
-- Caption: 14pt, Regular (Secondary text)
-- Small: 12pt, Regular (Timestamps, labels)
+- Heading 1: 28pt, SemiBold, tracking: -0.5pt (Dashboard)
+- Heading 2: 22pt, SemiBold, tracking: -0.25pt (Sections)
+- Heading 3: 18pt, Medium (Cards)
+- Body: 16pt, Regular, line-height: 24pt
+- Caption: 14pt, Regular, line-height: 20pt
+- Small: 12pt, Medium (Labels, timestamps)
 
-### Spacing System
+### Spacing & Radius Tokens
+**Spacing:**
 - xs: 4pt
 - sm: 8pt
-- md: 16pt
-- lg: 24pt
-- xl: 32pt
-- xxl: 48pt
+- md: 12pt
+- lg: 16pt
+- xl: 24pt
+- xxl: 32pt
+
+**Border Radius:**
+- sm: 6pt (inputs, badges)
+- md: 12pt (cards, buttons)
+- lg: 16pt (modals, large cards)
+- full: 9999pt (pills, avatars)
 
 ### Component Specifications
 
 **Stat Cards:**
-- White background with subtle border
-- 16pt padding
-- Icon in soft gold tint circle (top-left)
-- Large number (32pt, SemiBold) in maroon
-- Label below in text-secondary
+- White surface, radius.lg, subtle gradient overlay (accent at 5% opacity)
+- Padding: lg
+- Icon (24pt) in accent circle, top-left
+- Number (32pt, SemiBold) in text-primary
+- Label (caption) in text-secondary
+- Press: scale 0.98, opacity 0.95 (150ms ease-out)
 
 **Navigation Cards:**
-- White background with 1pt border
-- 20pt padding
-- Feather icon (32pt) in maroon
+- White surface, radius.md, 1pt border
+- Padding: xl
+- Icon (28pt) in accent color, centered
 - Label (16pt, Medium) below icon
-- Press feedback: scale to 0.97, reduce opacity to 0.8
+- Press: background accent at 5% opacity, scale 0.97 (200ms spring)
 
-**Customer/Employee/Order Cards:**
-- White background with subtle shadow
-- 16pt padding
-- Avatar/icon on left (48pt circle)
-- Text content in center (name, details)
-- Badge/status indicator on right
-- Press feedback: background tint to #F5F5F5
+**List Cards (Customer/Employee/Order):**
+- White surface, radius.md, subtle shadow (offset: 0,1, opacity: 0.05, radius: 3)
+- Padding: lg
+- Avatar (48pt, radius.full) on left
+- Content center-aligned
+- Badge/status right-aligned
+- Press: background to #F8FAFC (100ms)
 
 **Status Badges:**
-- Rounded pill shape (24pt height)
-- Status-colored background at 15% opacity
-- Status-colored text (14pt, Medium)
-- 8pt horizontal padding
+- Pill shape (radius.full), height: 28pt
+- Background: status color at 12% opacity
+- Text: status color, 13pt, Medium
+- Padding horizontal: md
 
 **Floating Action Button:**
-- 56pt circle, maroon background
-- White plus icon (24pt)
-- Elevation shadow as specified above
-- Press feedback: scale to 0.95
+- 56pt circle, accent-primary background, radius.full
+- White icon (24pt)
+- Shadow: offset {0, 2}, opacity: 0.10, radius: 2
+- Press: scale 0.93, background darkens 10% (150ms ease-out)
 
 **Form Inputs:**
-- 48pt height
-- 1pt border, #E5E5E5
-- 12pt padding horizontal
-- Focus state: border color changes to maroon, 2pt width
-- Error state: border color #EF4444
+- Height: 48pt, radius.sm
+- Border: 1pt, border-color
+- Padding: md horizontal
+- Focus: border accent-primary 2pt, subtle glow (accent at 15% opacity, 4pt spread)
+- Error: border red, helper text below
 
 **Primary Button:**
-- 48pt height, maroon background
+- Height: 48pt, radius.md, accent-primary background
 - White text (16pt, Medium)
-- 16pt horizontal padding
-- Press feedback: background darkens by 10%
+- Padding: lg horizontal
+- Press: background darkens 12%, scale 0.98 (150ms)
 
 **Secondary Button:**
-- 48pt height, transparent background
-- 1pt maroon border
-- Maroon text (16pt, Medium)
-- Press feedback: background maroon at 10% opacity
+- Height: 48pt, radius.md, transparent background
+- 1pt accent-primary border, accent-primary text
+- Press: background accent at 8% opacity
+
+### Animations
+**Transitions:**
+- Screen push/pop: 300ms ease-out
+- Modal present: 250ms spring (damping: 0.8)
+- Tab switch: 200ms ease-in-out
+
+**Micro-interactions:**
+- Button press: scale + opacity, 150ms ease-out
+- Card press: background tint, 100ms linear
+- List scroll: momentum with slight bounce
+- Badge appear: fade + scale from 0.9, 200ms ease-out
+
+**Loading States:**
+- Skeleton shimmer: 1.5s loop, gradient sweep
+- Spinner: accent-primary, 1s linear loop
 
 ### Required Assets
 
 **Logo:**
-- Generate TailorFlow logo: minimalist "T" formed by thread loop inside circle
-- Variants: Full logo with wordmark, Icon only
-- Colors: Maroon (#8B4049) and soft gold (#D4AF37)
+- Generate TailorFlow logo: minimalist spool/thread icon forming "T" with needle detail
+- Variants: Full wordmark (horizontal), icon-only
+- Colors: Gradient from accent-primary to accent-secondary
 
 **Icons:**
-- Use Feather icons from @expo/vector-icons for all UI elements
+- Use Feather icons from @expo/vector-icons exclusively
 - No custom icon assets needed
 
-**No additional image assets required** - All content is user-generated (customer photos, fabric images, completed designs)
+**No additional images required** - Content is user-generated (customer photos, fabric samples)
 
 ### Accessibility
-- Minimum touch target: 44pt x 44pt
-- Color contrast ratio: minimum 4.5:1 for text
+- Minimum touch target: 44pt × 44pt
+- Color contrast: 4.5:1 minimum for text
 - All interactive elements have visible press states
-- Form inputs have clear labels and error messages
-- Status information conveyed through both color and text labels
+- Form inputs have labels and error messages
+- Status conveyed via color AND text/icons

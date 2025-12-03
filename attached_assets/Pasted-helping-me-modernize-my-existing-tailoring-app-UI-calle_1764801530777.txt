@@ -1,0 +1,62 @@
+helping me modernize my existing tailoring app UI called **TailorFlow**.  
+The app is already built in React Native and uses a dark theme, but I don’t like the current colors, icons, fonts, animations, or transitions.
+
+## Goal
+Refactor the UI to look **modern, simple, vibrant, conceptual and similar in feel to 21.dev components** while keeping all business logic the same.
+
+## App Context
+- Tech: React Native with Expo.
+- Screens: Dashboard, Customers, Orders, Employees, Payments, Analytics, Settings.
+- Current dashboard layout:
+  - Top: 4 stat cards (Active Orders, Completed Today, Today’s Revenue, Pending Payments).
+  - Middle: “Quick Actions” grid (Customers, Orders, Employees, Payments, Analytics, Settings).
+  - Bottom: “Recent Activity” placeholder.
+  - Bottom tab bar with 5 tabs (Dashboard, Customers, Orders, Employees, More).
+- Brand name: **TailorFlow** (tailoring/boutique management SaaS).
+
+## What I Want You To Do
+1. **Design system**
+   - Propose a full light or soft-dark theme:
+     - Primary, secondary, background, surface, border, text, success, warning, error colors.
+     - Use a **minimal, vibrant palette** (1–2 accent colors + grays).
+   - Choose a modern, widely available font (e.g. Inter, Manrope, Plus Jakarta Sans) and define:
+     - Heading, subheading, body, caption styles (fontSize, fontWeight, lineHeight).
+   - Define spacing, radius, and shadow tokens (e.g. `radius.sm`, `radius.md`, `radius.lg`, `spacing.xs`…).
+
+2. **Reusable components (with code)**
+   - Create production‑ready React Native components using the design system:
+     - `AppTheme` / `theme.ts` (colors, typography, spacing).
+     - `ThemedView`, `ThemedText`.
+     - `PrimaryButton`, `IconButton`, `StatCard`, `SectionHeader`, `QuickActionTile`.
+     - A simple bottom tab bar style that looks clean and modern.
+   - Use a single icon set (Lucide, Phosphor, or similar) and show how to wire it in:
+     - Example: `import { Users, Receipt, BarChart3 } from "lucide-react-native";`
+
+3. **Dashboard screen refactor**
+   - Write a complete `DashboardScreen.tsx` that:
+     - Uses the new stat cards in a responsive layout (2x2 grid on phones).
+     - Shows “Quick Actions” as minimal tiles with icon + label (no heavy borders).
+     - Shows a simple “No recent activity” state using the new typography and icon.
+   - Only focus on layout and styling; data can be static mock values.
+
+4. **Animations and transitions**
+   - Add **subtle, performant animations** only:
+     - Press feedback on buttons/tiles with `Pressable` and scale/opacity change using `Animated` or `react-native-reanimated`.
+     - Fade/slide‑in effect when the Dashboard mounts.
+   - Provide small, reusable hooks or components for these micro‑interactions.
+
+5. **Implementation style**
+   - Use TypeScript.
+   - Use functional components and React hooks.
+   - Keep styles organized: either StyleSheet objects or `styled-components` (you choose one and stick to it).
+   - Show all important imports.
+   - Avoid any backend or navigation changes; assume React Navigation is already set up and just export the screen/component.
+
+6. **Output format**
+   - Return:
+     1. `theme.ts` (design tokens).
+     2. `components/` folder files for the shared UI components.
+     3. `screens/DashboardScreen.tsx` with the new UI.
+     4. Brief notes in comments on how to plug this theme into the rest of the app.
+
+Start by proposing the theme and components, then show the full code for the new Dashboard using that system.
