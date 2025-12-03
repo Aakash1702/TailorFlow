@@ -2,8 +2,8 @@ import React, { useState, useCallback } from "react";
 import { View, StyleSheet, RefreshControl } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useFocusEffect, useNavigation, NavigatorScreenParams } from "@react-navigation/native";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { StatCard } from "@/components/StatCard";
@@ -16,8 +16,6 @@ import { useData } from "@/contexts/DataContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { formatCurrency } from "@/utils/storage";
 import { DashboardStats, ActivityItem } from "@/types";
-
-import { NavigatorScreenParams } from "@react-navigation/native";
 
 type MoreStackParamList = {
   MoreMenu: undefined;
@@ -38,7 +36,7 @@ type RootTabParamList = {
 export default function DashboardScreen() {
   const { theme } = useTheme();
   const { getOrders, getPayments, getActivities, isOnline, isSyncing } = useData();
-  const navigation = useNavigation<NativeStackNavigationProp<RootTabParamList>>();
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const [stats, setStats] = useState<DashboardStats>({
     activeOrders: 0,
     completedToday: 0,

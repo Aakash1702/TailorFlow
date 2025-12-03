@@ -5,6 +5,7 @@ import { AnimatedPressable } from "./AnimatedPressable";
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { withOpacity } from "@/utils/colorUtils";
 
 interface StatCardProps {
   title: string;
@@ -39,10 +40,10 @@ export function StatCard({
       <View
         style={[
           styles.gradientOverlay,
-          { backgroundColor: color + "08" },
+          { backgroundColor: withOpacity(color, 0.05) },
         ]}
       />
-      <View style={[styles.iconContainer, { backgroundColor: color + "15" }]}>
+      <View style={[styles.iconContainer, { backgroundColor: withOpacity(color, 0.12) }]}>
         <Feather name={icon} size={20} color={color} />
       </View>
       <ThemedText type="stat" style={[styles.value, { color: theme.text }]}>

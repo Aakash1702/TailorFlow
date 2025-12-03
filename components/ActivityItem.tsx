@@ -6,6 +6,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { ActivityItem as ActivityItemType } from "@/types";
 import { getRelativeTime } from "@/utils/storage";
+import { withOpacity } from "@/utils/colorUtils";
 
 interface ActivityItemProps {
   activity: ActivityItemType;
@@ -62,7 +63,7 @@ export function ActivityListItem({ activity, isLast = false }: ActivityItemProps
         },
       ]}
     >
-      <View style={[styles.iconContainer, { backgroundColor: color + "15" }]}>
+      <View style={[styles.iconContainer, { backgroundColor: withOpacity(color, 0.12) }]}>
         <Feather name={icon} size={16} color={color} />
       </View>
       <View style={styles.content}>
