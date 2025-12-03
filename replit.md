@@ -40,7 +40,7 @@ Preferred communication style: Simple, everyday language.
 - Theme-based design with light/dark mode support
 - Centralized constants for spacing, typography, border radius, and colors
 - Platform-specific adaptations (iOS blur effects, Android edge-to-edge)
-- Custom color palette featuring primary (#8B4049) and accent (#D4AF37) colors
+- Modern color palette featuring primary indigo (#6366F1) and accent pink (#EC4899)
 
 ### Data Storage
 
@@ -169,6 +169,38 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**December 3, 2025 - UI Modernization**
+
+1. **New Color Palette**
+   - Primary: Indigo (#6366F1) - modern, professional feel
+   - Accent: Pink (#EC4899) - vibrant highlight color
+   - Success: Emerald (#10B981)
+   - Warning: Amber (#F59E0B)
+   - Error: Rose (#F43F5E)
+
+2. **Animated Components**
+   - AnimatedPressable: Base component with scale/opacity press animations
+   - StatCard: Dashboard stat cards with fade-in mount animation
+   - QuickActionTile: Action tiles with spring press feedback
+   - SectionHeader: Styled section headers
+   - ActivityListItem: Activity feed items with icons
+
+3. **Dashboard Redesign**
+   - 2x2 stat cards grid with animated mount
+   - 3-column quick actions grid for navigation
+   - Activity feed with relative timestamps
+   - Pull-to-refresh functionality
+
+4. **Animation System**
+   - useAnimatedMount hook for fade-in effects
+   - React Native Reanimated-powered spring animations
+   - Consistent timing and easing across components
+
+5. **Tab Bar Updates**
+   - Modern blur effect styling on iOS
+   - Elevated appearance with subtle shadow
+   - Clean icon-focused design
+
 **December 1, 2025 - OAuth Authentication**
 
 1. **OAuth Sign-in Implementation**
@@ -247,8 +279,17 @@ Preferred communication style: Simple, everyday language.
 
 /components
   - Card.tsx, ThemedText.tsx, ThemedView.tsx  # UI primitives
+  - AnimatedPressable.tsx  # Base pressable with animations
+  - StatCard.tsx, QuickActionTile.tsx  # Dashboard components
+  - SectionHeader.tsx, ActivityItem.tsx  # List/section components
   - ErrorBoundary.tsx  # App crash recovery
   - ScreenScrollView.tsx, ScreenKeyboardAwareScrollView.tsx  # Layout helpers
+
+/hooks
+  - useAnimatedMount.ts  # Fade-in animation hook
+
+/utils
+  - colorUtils.ts  # Color manipulation helpers (withOpacity)
 
 /constants
   - theme.ts  # Colors, spacing, typography, border radius
