@@ -86,6 +86,12 @@ export function MigrationScreen({ onComplete }: MigrationScreenProps) {
           <ThemedText style={[styles.progressText, { color: theme.textSecondary }]}>
             {migrationProgress}% complete
           </ThemedText>
+          <Button
+            onPress={handleSkip}
+            style={[styles.skipButton, { backgroundColor: theme.backgroundSecondary }]}
+          >
+            <ThemedText style={{ color: theme.text }}>Skip Migration</ThemedText>
+          </Button>
         </View>
       </View>
     );
@@ -197,6 +203,10 @@ const styles = StyleSheet.create({
   note: {
     textAlign: 'center',
     fontSize: 12,
+    marginTop: Spacing.xl,
+  },
+  skipButton: {
+    width: '100%',
     marginTop: Spacing.xl,
   },
 });

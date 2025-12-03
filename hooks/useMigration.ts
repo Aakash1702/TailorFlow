@@ -27,18 +27,27 @@ export function useMigration(shopId: string | null) {
         return false;
       }
 
-      const hasLocalData = await Promise.any([
-        AsyncStorage.getItem(STORAGE_KEYS.CUSTOMERS),
-        AsyncStorage.getItem(STORAGE_KEYS.ORDERS),
-        AsyncStorage.getItem(STORAGE_KEYS.EMPLOYEES),
-        AsyncStorage.getItem(STORAGE_KEYS.PAYMENTS),
-      ]);
+      const customersJson = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOMERS);
+      const ordersJson = await AsyncStorage.getItem(STORAGE_KEYS.ORDERS);
+      const employeesJson = await AsyncStorage.getItem(STORAGE_KEYS.EMPLOYEES);
+      const paymentsJson = await AsyncStorage.getItem(STORAGE_KEYS.PAYMENTS);
 
-      return hasLocalData !== null;
+      const customers = customersJson ? JSON.parse(customersJson) : [];
+      const orders = ordersJson ? JSON.parse(ordersJson) : [];
+      const employees = employeesJson ? JSON.parse(employeesJson) : [];
+      const payments = paymentsJson ? JSON.parse(paymentsJson) : [];
+
+      const hasRealData = customers.length > 0 || orders.length > 0 || employees.length > 0 || payments.length > 0;
+      
+      if (!hasRealData) {
+        await AsyncStorage.setItem(`${MIGRATION_KEY}_${shopId}`, 'true');
+        return false;
+      }
+
+      return true;
     } catch {
-      const customers = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOMERS);
-      const orders = await AsyncStorage.getItem(STORAGE_KEYS.ORDERS);
-      return !!(customers || orders);
+      await AsyncStorage.setItem(`${MIGRATION_KEY}_${shopId}`, 'true');
+      return false;
     }
   }, [shopId]);
 
