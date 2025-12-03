@@ -2,13 +2,14 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import DashboardStackNavigator from "@/navigation/DashboardStackNavigator";
 import CustomersStackNavigator from "@/navigation/CustomersStackNavigator";
 import OrdersStackNavigator from "@/navigation/OrdersStackNavigator";
 import EmployeesStackNavigator from "@/navigation/EmployeesStackNavigator";
 import MoreStackNavigator from "@/navigation/MoreStackNavigator";
 import { useTheme } from "@/hooks/useTheme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 export type MainTabParamList = {
   DashboardTab: undefined;
@@ -29,23 +30,41 @@ export default function MainTabNavigator() {
       screenOptions={{
         tabBarActiveTintColor: theme.tabIconSelected,
         tabBarInactiveTintColor: theme.tabIconDefault,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "500",
+          marginTop: -2,
+        },
         tabBarStyle: {
           position: "absolute",
           backgroundColor: Platform.select({
             ios: "transparent",
-            android: theme.backgroundRoot,
+            android: theme.backgroundDefault,
           }),
           borderTopWidth: 0,
           elevation: 0,
+          height: Platform.select({ ios: 84, android: 64 }),
+          paddingTop: Spacing.xs,
         },
         tabBarBackground: () =>
           Platform.OS === "ios" ? (
             <BlurView
-              intensity={100}
+              intensity={80}
               tint={isDark ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             />
-          ) : null,
+          ) : (
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: theme.backgroundDefault,
+                  borderTopWidth: 1,
+                  borderTopColor: theme.borderLight,
+                },
+              ]}
+            />
+          ),
         headerShown: false,
       }}
     >
