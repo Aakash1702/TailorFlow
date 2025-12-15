@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -19,6 +19,7 @@ import { ThemedText } from '../components/ThemedText';
 import { Button } from '../components/Button';
 import { useTheme } from '../hooks/useTheme';
 import { Colors, Spacing, BorderRadius, Typography } from '../constants/theme';
+import { supabase } from '../lib/supabase';
 
 type AuthMode = 'login' | 'signup' | 'forgotPassword';
 
@@ -39,7 +40,7 @@ const oauthProviders: OAuthProvider[] = [
 export function AuthScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { signIn, signUp, signInWithOAuth, resetPassword } = useAuth();
+  const { signIn, signUp, signInWithOAuth, resetPassword, isOnline } = useAuth();
   
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
@@ -52,6 +53,24 @@ export function AuthScreen() {
   const [oauthLoading, setOauthLoading] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetryConnection = useCallback(async () => {
+    setIsRetrying(true);
+    setError(null);
+    try {
+      const { error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        setError('Still unable to connect. Please check your internet connection.');
+      } else {
+        setSuccessMessage('Connection restored!');
+      }
+    } catch (err) {
+      setError('Network request failed. Please check your internet connection and try again.');
+    } finally {
+      setIsRetrying(false);
+    }
+  }, []);
 
   const handleOAuthSignIn = async (provider: Provider) => {
     setOauthLoading(provider);
@@ -75,10 +94,22 @@ export function AuthScreen() {
     setIsLoading(true);
     setError(null);
 
-    const { error } = await signIn(email, password);
-    
-    if (error) {
-      setError(error.message);
+    try {
+      const { error } = await signIn(email, password);
+      
+      if (error) {
+        if (error.message.includes('Network request failed') || error.message.includes('fetch')) {
+          setError('Unable to connect to the server. Please check your internet connection and try again.');
+        } else {
+          setError(error.message);
+        }
+      }
+    } catch (err: any) {
+      if (err?.message?.includes('Network') || err?.message?.includes('fetch')) {
+        setError('Unable to connect to the server. Please check your internet connection and try again.');
+      } else {
+        setError(err?.message || 'An unexpected error occurred');
+      }
     }
     
     setIsLoading(false);
@@ -425,6 +456,31 @@ export function AuthScreen() {
             {mode === 'login' ? 'Welcome Back' : mode === 'signup' ? 'Create Account' : 'Reset Password'}
           </ThemedText>
 
+          {!isOnline ? (
+            <View style={[styles.messageBox, { backgroundColor: Colors.light.warning + '20' }]}>
+              <Feather name="wifi-off" size={18} color={Colors.light.warning} />
+              <View style={styles.offlineMessageContent}>
+                <ThemedText style={[styles.messageText, { color: Colors.light.warning }]}>
+                  Unable to connect to server
+                </ThemedText>
+                <Pressable 
+                  onPress={handleRetryConnection} 
+                  disabled={isRetrying}
+                  style={({ pressed }) => [
+                    styles.retryButton,
+                    { backgroundColor: Colors.light.warning, opacity: pressed ? 0.8 : 1 }
+                  ]}
+                >
+                  {isRetrying ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <ThemedText style={styles.retryButtonText}>Retry</ThemedText>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+
           {error ? (
             <View style={[styles.messageBox, { backgroundColor: Colors.light.error + '15' }]}>
               <Feather name="alert-circle" size={18} color={Colors.light.error} />
@@ -504,6 +560,24 @@ const styles = StyleSheet.create({
   messageText: {
     flex: 1,
     fontSize: Typography.small.fontSize,
+  },
+  offlineMessageContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  retryButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: Typography.small.fontSize,
+    fontWeight: '600',
   },
   inputContainer: {
     gap: Spacing.md,
