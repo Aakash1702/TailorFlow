@@ -169,6 +169,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**December 15, 2025 - Pattern Engine MVP**
+
+1. **Pattern Generation System**
+   - PatternTemplate and PatternInstance database schema
+   - Support for Basic Saree Blouse, Kids Frock, Simple Kurti templates
+   - Drafting formulas with measurement-based calculations
+   - SVG generation for pattern pieces
+
+2. **New Screens**
+   - PatternTemplatesScreen: Browse available garment templates
+   - PatternGeneratorScreen: Input measurements and options
+   - PatternViewerScreen: View and share generated patterns
+
+3. **Features**
+   - Customer measurement prefilling from existing profiles
+   - Multiple garment options (sleeve type, neck type, ease)
+   - Pattern pieces include seam allowance
+   - Share and print pattern functionality
+
 **December 3, 2025 - UI Modernization**
 
 1. **New Color Palette**
@@ -270,6 +289,9 @@ Preferred communication style: Simple, everyday language.
   - AddPaymentScreen.tsx  # Payment recording
   - SettingsScreen.tsx  # Shop settings, export, data management
   - AnalyticsScreen.tsx  # Business analytics
+  - PatternTemplatesScreen.tsx  # Browse pattern templates
+  - PatternGeneratorScreen.tsx  # Generate patterns with measurements
+  - PatternViewerScreen.tsx  # View and share generated patterns
 
 /utils
   - storage.ts  # AsyncStorage CRUD operations, balance calculations
@@ -290,6 +312,7 @@ Preferred communication style: Simple, everyday language.
 
 /utils
   - colorUtils.ts  # Color manipulation helpers (withOpacity)
+  - patternGenerator.ts  # SVG pattern generation with drafting formulas
 
 /constants
   - theme.ts  # Colors, spacing, typography, border radius
