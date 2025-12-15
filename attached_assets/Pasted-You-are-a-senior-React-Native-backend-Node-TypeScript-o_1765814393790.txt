@@ -1,0 +1,53 @@
+You are a senior React Native + backend (Node/TypeScript or Python) engineer helping me extend my existing tailoring SaaS app **TailorFlow**.
+
+## Goal
+
+Design and implement an MVP **Pattern Engine** inside TailorFlow, inspired by TailorTrix‑style functionality.  
+This module should let a boutique:
+
+1. Choose a **garment design template** (e.g., basic saree blouse, kids frock).
+2. Enter or reuse **customer measurements**.
+3. Generate **pattern pieces** (as SVG/PDF) that can be viewed inside the React Native app and optionally printed.
+
+Keep business logic realistic for Indian tailoring workflows, but keep scope focused and shippable as an MVP.
+
+---
+
+## Existing Context
+
+- Frontend: React Native app (already live) with modules for:
+  - Customers, Orders, Employees, Payments, Analytics, Settings.
+- Backend: Assume a standard REST/JSON API with authentication and a relational DB (e.g., Postgres). You can define new tables and endpoints as needed.
+- Each **Order** is already linked to a **Customer** and has measurements stored or can fetch them from the customer profile.
+
+---
+
+## What to Design & Build
+
+### 1. Data model (backend)
+
+Design simple but extendable tables/entities:
+
+- `PatternTemplate`
+  - id, name (e.g., “Basic Saree Blouse v1”), garmentType, description.
+  - measurementFields (JSON schema: bust, waist, length, etc.).
+  - formulaVersion / metadata.
+- `PatternInstance`
+  - id, orderId, customerId, templateId.
+  - measurements (actual values used).
+  - options (e.g., sleeve length, neck type) as JSON.
+  - status (draft/generated).
+  - generatedFileUrl (PDF or SVG).
+  - createdAt, updatedAt.
+
+Define SQL table structures and brief description of relationships.
+
+### 2. Pattern generation logic (backend)
+
+Implement **for at least ONE concrete garment** (MVP):
+
+- Example: `BasicSareeBlouse` pattern.
+- Encode **simplified drafting formulas** using common tailoring logic, e.g.:
+  - piece widths/heights derived from bust, waist, length, plus ease.
+- Implement a pure function like:
+

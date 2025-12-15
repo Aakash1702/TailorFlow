@@ -5,6 +5,9 @@ import PaymentsScreen from "@/screens/PaymentsScreen";
 import AnalyticsScreen from "@/screens/AnalyticsScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import AddPaymentScreen from "@/screens/AddPaymentScreen";
+import PatternTemplatesScreen from "@/screens/PatternTemplatesScreen";
+import PatternGeneratorScreen from "@/screens/PatternGeneratorScreen";
+import PatternViewerScreen from "@/screens/PatternViewerScreen";
 import { useTheme } from "@/hooks/useTheme";
 import { getCommonScreenOptions } from "@/navigation/screenOptions";
 
@@ -14,6 +17,9 @@ export type MoreStackParamList = {
   Analytics: undefined;
   Settings: undefined;
   AddPayment: { orderId?: string; customerId?: string } | undefined;
+  PatternTemplates: undefined;
+  PatternGenerator: { templateId: string; customerId?: string; orderId?: string };
+  PatternViewer: { svg: string; templateName: string };
 };
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
@@ -61,6 +67,27 @@ export default function MoreStackNavigator() {
         options={{
           title: "Record Payment",
           presentation: "modal",
+        }}
+      />
+      <Stack.Screen
+        name="PatternTemplates"
+        component={PatternTemplatesScreen}
+        options={{
+          title: "Pattern Templates",
+        }}
+      />
+      <Stack.Screen
+        name="PatternGenerator"
+        component={PatternGeneratorScreen}
+        options={{
+          title: "Generate Pattern",
+        }}
+      />
+      <Stack.Screen
+        name="PatternViewer"
+        component={PatternViewerScreen}
+        options={{
+          title: "View Pattern",
         }}
       />
     </Stack.Navigator>

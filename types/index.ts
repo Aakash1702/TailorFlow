@@ -122,3 +122,70 @@ export interface ActivityItem {
   description: string;
   timestamp: string;
 }
+
+export type GarmentType = 'blouse' | 'kurti' | 'salwar' | 'frock' | 'shirt' | 'pants' | 'lehenga' | 'other';
+export type PatternStatus = 'draft' | 'generated' | 'printed' | 'archived';
+
+export interface MeasurementField {
+  key: string;
+  label: string;
+  required: boolean;
+}
+
+export interface PatternOptionSchema {
+  label: string;
+  options?: string[];
+  type?: string;
+  default: string | number;
+}
+
+export interface PatternTemplate {
+  id: string;
+  name: string;
+  garmentType: GarmentType;
+  description?: string;
+  measurementFields: MeasurementField[];
+  optionsSchema: Record<string, PatternOptionSchema>;
+  formulaVersion: string;
+  previewImageUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PatternInstance {
+  id: string;
+  shopId: string;
+  orderId?: string;
+  customerId: string;
+  templateId: string;
+  measurements: Record<string, number>;
+  options: Record<string, string | number>;
+  status: PatternStatus;
+  generatedSvg?: string;
+  generatedFileUrl?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PatternPiece {
+  name: string;
+  path: string;
+  width: number;
+  height: number;
+  labels: PatternLabel[];
+}
+
+export interface PatternLabel {
+  text: string;
+  x: number;
+  y: number;
+  rotation?: number;
+}
+
+export interface GeneratedPattern {
+  pieces: PatternPiece[];
+  totalWidth: number;
+  totalHeight: number;
+  svg: string;
+}

@@ -8,6 +8,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { MoreStackParamList } from "@/navigation/MoreStackNavigator";
+import { withOpacity } from "@/utils/colorUtils";
 
 interface MenuItem {
   icon: string;
@@ -36,6 +37,15 @@ export default function MoreScreen() {
     },
   ];
 
+  const toolsItems: MenuItem[] = [
+    {
+      icon: "scissors",
+      title: "Pattern Engine",
+      subtitle: "Generate garment patterns",
+      screen: "PatternTemplates",
+    },
+  ];
+
   const settingsItems: MenuItem[] = [
     {
       icon: "settings",
@@ -55,7 +65,7 @@ export default function MoreScreen() {
       ]}
       onPress={() => navigation.navigate(item.screen)}
     >
-      <View style={[styles.menuIcon, { backgroundColor: (item.color || theme.primary) + "15" }]}>
+      <View style={[styles.menuIcon, { backgroundColor: withOpacity(item.color || theme.primary, 0.12) }]}>
         <Feather name={item.icon as any} size={20} color={item.color || theme.primary} />
       </View>
       <View style={styles.menuContent}>
@@ -78,6 +88,15 @@ export default function MoreScreen() {
       <View style={[styles.menuCard, { backgroundColor: theme.backgroundDefault }]}>
         {financialItems.map((item, index) =>
           renderMenuItem(item, index === financialItems.length - 1)
+        )}
+      </View>
+
+      <ThemedText type="h4" style={styles.sectionTitle}>
+        Tools
+      </ThemedText>
+      <View style={[styles.menuCard, { backgroundColor: theme.backgroundDefault }]}>
+        {toolsItems.map((item, index) =>
+          renderMenuItem(item, index === toolsItems.length - 1)
         )}
       </View>
 
