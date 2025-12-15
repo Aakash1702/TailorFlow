@@ -2,13 +2,23 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || '';
 const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey || '';
 
+// Log configuration status for debugging
+console.log('[Supabase] Platform:', Platform.OS);
+console.log('[Supabase] URL configured:', supabaseUrl ? 'Yes' : 'No');
+console.log('[Supabase] Key configured:', supabaseAnonKey ? 'Yes' : 'No');
+if (supabaseUrl) {
+  console.log('[Supabase] URL prefix:', supabaseUrl.substring(0, 30) + '...');
+}
+
 let supabase: SupabaseClient;
 
 if (supabaseUrl && supabaseAnonKey) {
+  console.log('[Supabase] Creating real client');
   supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       storage: AsyncStorage,
@@ -18,7 +28,7 @@ if (supabaseUrl && supabaseAnonKey) {
     },
   });
 } else {
-  console.warn('Supabase configuration missing. Using mock client.');
+  console.warn('[Supabase] Configuration missing! Using mock client.');
   supabase = {
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),
