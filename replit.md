@@ -40,7 +40,8 @@ Preferred communication style: Simple, everyday language.
 - Theme-based design with light/dark mode support
 - Centralized constants for spacing, typography, border radius, and colors
 - Platform-specific adaptations (iOS blur effects, Android edge-to-edge)
-- Modern color palette featuring primary indigo (#6366F1) and accent pink (#EC4899)
+- Premium color palette: Rich Black (#1A1A1A) primary, Metallic Gold (#D4AF37) accent
+- Refined elevation system with subtle shadows (level1, level2, level3)
 
 ### Data Storage
 
