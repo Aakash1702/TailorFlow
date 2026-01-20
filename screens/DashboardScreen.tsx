@@ -11,7 +11,7 @@ import { ActivityListItem } from "@/components/ActivityItem";
 import { useTheme } from "@/hooks/useTheme";
 import { useAnimatedMount } from "@/hooks/useAnimatedMount";
 import { useData } from "@/contexts/DataContext";
-import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { Spacing, Shadows } from "@/constants/theme";
 import { formatCurrency } from "@/utils/storage";
 import { DashboardStats, ActivityItem } from "@/types";
 
@@ -31,9 +31,57 @@ type RootTabParamList = {
   MoreTab: NavigatorScreenParams<MoreStackParamList> | undefined;
 };
 
+const SECTION_COLORS = {
+  orders: {
+    bg: "#E8F4F8",
+    icon: "#2B7A8C",
+    text: "#1E5A68",
+  },
+  completed: {
+    bg: "#E8F5E9",
+    icon: "#43A047",
+    text: "#2E7D32",
+  },
+  revenue: {
+    bg: "#FFF8E1",
+    icon: "#F9A825",
+    text: "#F57F17",
+  },
+  pending: {
+    bg: "#FCE4EC",
+    icon: "#E91E63",
+    text: "#C2185B",
+  },
+  customers: {
+    bg: "#EDE7F6",
+    icon: "#7E57C2",
+    text: "#5E35B1",
+  },
+  team: {
+    bg: "#E3F2FD",
+    icon: "#42A5F5",
+    text: "#1976D2",
+  },
+  payments: {
+    bg: "#FFF3E0",
+    icon: "#FF9800",
+    text: "#EF6C00",
+  },
+  analytics: {
+    bg: "#F3E5F5",
+    icon: "#AB47BC",
+    text: "#8E24AA",
+  },
+  settings: {
+    bg: "#ECEFF1",
+    icon: "#78909C",
+    text: "#546E7A",
+  },
+};
+
 export default function DashboardScreen() {
   const { theme } = useTheme();
-  const { getOrders, getPayments, getActivities, isOnline, isSyncing } = useData();
+  const { getOrders, getPayments, getActivities } = useData();
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>();
   const [stats, setStats] = useState<DashboardStats>({
     activeOrders: 0,
@@ -98,41 +146,41 @@ export default function DashboardScreen() {
       title: "Active Orders",
       value: stats.activeOrders.toString(),
       icon: "layers" as const,
-      highlight: false,
+      colors: SECTION_COLORS.orders,
     },
     {
       title: "Completed",
       value: stats.completedToday.toString(),
       icon: "check-circle" as const,
-      highlight: true,
+      colors: SECTION_COLORS.completed,
     },
     {
       title: "Revenue",
       value: formatCurrency(stats.todayRevenue),
       icon: "trending-up" as const,
-      highlight: true,
+      colors: SECTION_COLORS.revenue,
     },
     {
       title: "Pending",
       value: formatCurrency(stats.pendingPayments),
       icon: "clock" as const,
-      highlight: false,
+      colors: SECTION_COLORS.pending,
     },
   ];
 
   const quickActions: Array<{
     title: string;
     icon: keyof typeof Feather.glyphMap;
+    colors: typeof SECTION_COLORS.orders;
     tab: keyof RootTabParamList;
     screen?: keyof MoreStackParamList;
-    highlight?: boolean;
   }> = [
-    { title: "Customers", icon: "users", tab: "CustomersTab" },
-    { title: "Orders", icon: "package", tab: "OrdersTab" },
-    { title: "Team", icon: "user-check", tab: "EmployeesTab" },
-    { title: "Payments", icon: "credit-card", tab: "MoreTab", screen: "Payments", highlight: true },
-    { title: "Analytics", icon: "pie-chart", tab: "MoreTab", screen: "Analytics" },
-    { title: "Settings", icon: "sliders", tab: "MoreTab", screen: "Settings" },
+    { title: "Customers", icon: "users", colors: SECTION_COLORS.customers, tab: "CustomersTab" },
+    { title: "Orders", icon: "package", colors: SECTION_COLORS.orders, tab: "OrdersTab" },
+    { title: "Team", icon: "user-check", colors: SECTION_COLORS.team, tab: "EmployeesTab" },
+    { title: "Payments", icon: "credit-card", colors: SECTION_COLORS.payments, tab: "MoreTab", screen: "Payments" },
+    { title: "Analytics", icon: "pie-chart", colors: SECTION_COLORS.analytics, tab: "MoreTab", screen: "Analytics" },
+    { title: "Settings", icon: "sliders", colors: SECTION_COLORS.settings, tab: "MoreTab", screen: "Settings" },
   ];
 
   const handleActionPress = (action: typeof quickActions[0]) => {
@@ -165,24 +213,26 @@ export default function DashboardScreen() {
             key={index}
             style={[
               styles.statCard,
-              { backgroundColor: theme.backgroundDefault },
+              { backgroundColor: "#FFFFFF" },
               Shadows.level1,
             ]}
           >
             <View
               style={[
                 styles.statIconContainer,
-                { backgroundColor: stat.highlight ? theme.accent + "15" : theme.backgroundSecondary },
+                { backgroundColor: stat.colors.bg },
               ]}
             >
               <Feather
                 name={stat.icon}
                 size={20}
-                color={stat.highlight ? theme.accent : theme.text}
+                color={stat.colors.icon}
               />
             </View>
-            <ThemedText style={styles.statValue}>{stat.value}</ThemedText>
-            <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+            <ThemedText style={[styles.statValue, { color: theme.text }]}>
+              {stat.value}
+            </ThemedText>
+            <ThemedText style={[styles.statLabel, { color: stat.colors.text }]}>
               {stat.title}
             </ThemedText>
           </View>
@@ -199,27 +249,25 @@ export default function DashboardScreen() {
               style={({ pressed }) => [
                 styles.actionTile,
                 {
-                  backgroundColor: theme.backgroundDefault,
-                  borderColor: action.highlight ? theme.accent : theme.border,
-                  borderWidth: action.highlight ? 1.5 : 1,
-                  opacity: pressed ? 0.9 : 1,
-                  transform: [{ scale: pressed ? 0.98 : 1 }],
+                  backgroundColor: action.colors.bg,
+                  opacity: pressed ? 0.85 : 1,
+                  transform: [{ scale: pressed ? 0.97 : 1 }],
                 },
               ]}
             >
               <View
                 style={[
                   styles.actionIconContainer,
-                  { backgroundColor: action.highlight ? theme.accent + "15" : theme.backgroundSecondary },
+                  { backgroundColor: "rgba(255,255,255,0.7)" },
                 ]}
               >
                 <Feather
                   name={action.icon}
                   size={22}
-                  color={action.highlight ? theme.accent : theme.text}
+                  color={action.colors.icon}
                 />
               </View>
-              <ThemedText style={[styles.actionTitle, { color: theme.text }]}>
+              <ThemedText style={[styles.actionTitle, { color: action.colors.text }]}>
                 {action.title}
               </ThemedText>
             </Pressable>
@@ -283,12 +331,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: -0.5,
     lineHeight: 32,
-    color: "#1A1A1A",
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
     lineHeight: 18,
   },
   actionsGrid: {
