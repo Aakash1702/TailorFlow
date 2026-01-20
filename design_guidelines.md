@@ -2,13 +2,13 @@
 
 ## Brand Identity
 
-**Purpose:** Professional tailoring business management platform for shop owners who value craftsmanship and precision.
+**Purpose:** Professional tailoring business management for shop owners who value craftsmanship and precision.
 
-**Aesthetic Direction:** Luxurious/refined with editorial sophistication. Think high-end fashion atelier meets precision engineering. The app should feel like a carefully tailored suit—precise, elegant, with attention to every detail.
+**Aesthetic Direction:** Luxurious/refined with editorial sophistication. High-end fashion atelier meets precision engineering. The app feels like a carefully tailored suit—precise, elegant, with attention to every detail.
 
-**Memorable Element:** Subtle thread-inspired motion design. Interactions feel like fabric being measured and cut—smooth, deliberate, satisfying. Cards slide like silk, transitions are seamless.
+**Memorable Element:** Subtle thread-inspired motion design. Interactions feel like fabric being measured and cut—smooth, deliberate, satisfying. Premium typography creates editorial hierarchy reminiscent of Vogue or Harper's Bazaar.
 
-**Differentiation:** Premium depth through layered elevation (not heavy shadows), refined neutrals with metallic accents, and micro-animations that feel intentional, never gratuitous.
+**Differentiation:** Distinctive typography pairing (refined serif + modern sans), layered elevation (not heavy shadows), refined neutrals with metallic accents, intentional micro-animations.
 
 ## Navigation Architecture
 
@@ -17,7 +17,7 @@
 - Customers (users icon) - Customer management  
 - Orders (CENTER, shopping-bag icon) - Core order workflow
 - Team (briefcase icon) - Staff management
-- More (menu icon) - Secondary features
+- More (menu icon) - Settings & secondary features
 
 **Modals:** Create/Edit Order, Customer Detail, Employee Detail, Invoice Detail, Filters (slide-in from right)
 
@@ -27,10 +27,10 @@
 **Purpose:** At-a-glance business health with quick navigation
 
 **Layout:**
-- Transparent header: "TailorFlow" wordmark (custom, left), bell icon (right)
+- Transparent header: "TailorFlow" wordmark (left), bell icon (right)
 - ScrollView, insets: top = headerHeight + 24pt, bottom = tabBarHeight + 24pt
 - Stats grid (2×2): Revenue, Active Orders, Completed, Pending Payments
-- Navigation grid (2×3): Quick access cards
+- Quick access grid (2×3): Navigation cards
 - Recent Activity timeline (last 5 items)
 
 **Components:** Gradient stat cards, minimal navigation tiles, timeline with connecting line
@@ -41,10 +41,10 @@
 **Layout:**
 - Default header with search bar, plus icon (right)
 - FlatList, insets: bottom = tabBarHeight + 24pt
-- Searchable customer cards: avatar, name, phone, last visit, balance status
-- Empty state: "Add your first customer" with illustration
+- Customer cards: avatar, name, phone, last visit, balance status
+- Empty state: empty-customers.png illustration
 
-**Detail Screen:** Tabs (Profile, Measurements, Orders, Gallery, Notes), edit in header
+**Detail Modal:** Tabs (Profile, Measurements, Orders, Gallery, Notes), edit button in header
 
 ### Orders (Center Tab)
 **Purpose:** Order tracking and lifecycle management
@@ -62,10 +62,10 @@
 
 **Layout:**
 - Default header, "Add" button (right)
-- FlatList with employee cards: avatar, name, role badge, active tasks, performance dot
-- Empty state: "Invite your team" illustration
+- FlatList with employee cards: avatar, name, role badge, active tasks, performance indicator
+- Empty state: empty-team.png illustration
 
-**Detail:** Tabs (Profile, Assigned Tasks, Attendance, Payroll)
+**Detail Modal:** Tabs (Profile, Assigned Tasks, Attendance, Payroll)
 
 ### More
 **Purpose:** Settings and secondary features
@@ -88,7 +88,7 @@
 
 **Layout:**
 - Default header, date picker (right)
-- ScrollView, charts and KPI cards
+- ScrollView with charts and KPI cards
 - Revenue graph, top customers, employee performance metrics
 
 ## Color Palette
@@ -101,133 +101,78 @@
 **Text Secondary:** #666666  
 **Overlay:** rgba(26, 26, 26, 0.6)
 
-**Status Palette:**
-- Pending: #D97706 (Amber)
-- In Progress: #2563EB (Blue)
-- Ready: #059669 (Emerald)
-- Delivered: #7C3AED (Violet)
-- Overdue: #DC2626 (Red)
+**Status Colors:**
+- Pending: #D97706, In Progress: #2563EB, Ready: #059669, Delivered: #7C3AED, Overdue: #DC2626
 
-**Gradients (subtle):**
-- Card Overlay: linear, accent at 0% → transparent, 45° angle
-- Stat Backgrounds: accent 3% opacity
+**Gradients:** Card overlay (accent to transparent, 45°), stat backgrounds (accent 3% opacity)
 
 ## Typography
 
-**Primary Font:** SF Pro Display (iOS system)  
-**Secondary:** SF Pro Text (body)
+**Primary Font:** Cormorant Garamond (headings, display)  
+**Secondary Font:** Inter (body, UI)
 
-**Scale:**
-- Display: 32pt, SemiBold, tracking -0.8pt (Dashboard title)
-- H1: 24pt, SemiBold, tracking -0.4pt (Screen titles)
-- H2: 20pt, Medium, tracking -0.2pt (Section headers)
-- Body: 16pt, Regular, line-height 24pt
-- Caption: 14pt, Regular, line-height 20pt, text-secondary
-- Label: 12pt, Medium, tracking 0.5pt (uppercase), text-secondary
+**Type Scale:**
+- Display: Cormorant 38pt Light, tracking -1.2pt, line-height 44pt (Dashboard hero)
+- H1: Cormorant 28pt Regular, tracking -0.6pt, line-height 36pt (Screen titles)
+- H2: Cormorant 22pt Medium, tracking -0.4pt, line-height 28pt (Section headers)
+- H3: Inter 18pt SemiBold, tracking -0.2pt, line-height 24pt (Card titles)
+- Body: Inter 16pt Regular, line-height 24pt
+- Caption: Inter 14pt Regular, line-height 20pt, text-secondary
+- Label: Inter 12pt Medium, tracking 0.8pt, uppercase, text-secondary
+
+**Hierarchy Note:** Use Cormorant for editorial hierarchy (titles, headers). Use Inter for functional text (buttons, labels, body). This creates luxury magazine aesthetic while maintaining readability.
 
 ## Design System
 
-### Spacing Tokens
-xs: 4pt, sm: 8pt, md: 12pt, lg: 16pt, xl: 24pt, xxl: 32pt
+**Spacing:** xs: 4pt, sm: 8pt, md: 12pt, lg: 16pt, xl: 24pt, xxl: 32pt
 
-### Elevation System (iOS shadows)
-**Level 1 (Cards):** offset {0, 1}, opacity 0.04, radius 8, color #1A1A1A  
-**Level 2 (Elevated Cards):** offset {0, 2}, opacity 0.08, radius 12  
-**Level 3 (Modals):** offset {0, 8}, opacity 0.12, radius 24  
-**FAB:** offset {0, 2}, opacity 0.10, radius 2
+**Elevation (iOS shadows):**
+- Level 1 (Cards): offset {0, 1}, opacity 0.04, radius 8
+- Level 2 (Elevated): offset {0, 2}, opacity 0.08, radius 12
+- Level 3 (Modals): offset {0, 8}, opacity 0.12, radius 24
+- FAB: offset {0, 2}, opacity 0.10, radius 2
 
-### Component Specifications
+**Components:**
 
-**Premium Stat Cards:**
-- White surface, 16pt radius, Level 1 shadow
-- Subtle accent gradient overlay (3% opacity, diagonal)
-- 20pt padding, icon (28pt metallic gold) top-left
-- Number: 28pt SemiBold, primary text
-- Label: Caption style, secondary text
-- Press: scale 0.985, opacity 0.92 (200ms ease-out)
+**Premium Stat Cards:** White, 16pt radius, Level 1 shadow, subtle accent gradient (3% opacity diagonal), 20pt padding, metallic gold icon (28pt), number (28pt SemiBold Inter), label (Caption). Press: scale 0.985, opacity 0.92 (200ms ease-out)
 
-**Navigation Tiles:**
-- White surface, 12pt radius, 1pt border  
-- 24pt padding, centered icon (24pt) + label (16pt Medium)
-- Press: background #F7F7F7, scale 0.97 (180ms spring damping 0.85)
+**Navigation Tiles:** White, 12pt radius, 1pt border, 24pt padding, centered icon (24pt) + label (16pt Inter Medium). Press: background #F7F7F7, scale 0.97 (180ms spring damping 0.85)
 
-**List Cards:**
-- White surface, 14pt radius, Level 1 shadow
-- 16pt padding, 48pt avatar (left), content center, badge right
-- Divider: 1pt #E5E5E5 between items
-- Press: background #FAFAFA (120ms)
+**List Cards:** White, 14pt radius, Level 1 shadow, 16pt padding, 48pt avatar, divider 1pt #E5E5E5. Press: background #FAFAFA (120ms)
 
-**Status Badges:**
-- 24pt height, full radius, 12pt horizontal padding
-- Background: status color 10% opacity, border 1pt status color 20% opacity
-- Text: 12pt Medium, status color
+**Status Badges:** 24pt height, full radius, 12pt horizontal padding, status color 10% opacity background, 1pt border status color 20% opacity, 12pt Inter Medium text
 
-**Floating Action Button:**
-- 56pt circle, accent background, full radius
-- White icon 24pt
-- Level 3 shadow
-- Press: scale 0.92, brightness 90% (180ms ease-out)
+**FAB:** 56pt circle, accent background, white icon 24pt, Level 3 shadow. Press: scale 0.92, brightness 90% (180ms)
 
-**Form Inputs:**
-- 52pt height, 10pt radius, 1pt border
-- 16pt horizontal padding
-- Focus: 2pt accent border, glow (accent 12%, 6pt spread)
-- Label above: 12pt Medium, 8pt spacing
+**Form Inputs:** 52pt height, 10pt radius, 1pt border, 16pt horizontal padding. Focus: 2pt accent border, glow (accent 12%, 6pt spread). Label: 12pt Inter Medium, 8pt spacing above
 
-**Primary Button:**
-- 52pt height, 12pt radius, accent background
-- White text 16pt Medium
-- Press: brightness 85%, scale 0.98 (160ms)
+**Buttons:** Primary (52pt height, 12pt radius, accent background, white 16pt Inter Medium). Secondary (white background, 1pt primary border, primary text). Press: brightness 85%, scale 0.98 (160ms)
 
-**Secondary Button:**
-- 52pt height, 12pt radius, white background, 1pt primary border
-- Primary text
-- Press: background #F7F7F7
+**Animations:**
+- Screen transitions: 320ms ease-out with fade
+- Modal: 280ms spring (damping 0.82), slide from bottom
+- Card press: 120ms scale + background tint
+- Status change: 300ms cross-fade
+- Loading: shimmer 1.8s (#F7F7F7 → #FFFFFF)
 
-### Animations
+## Assets to Generate
 
-**Screen Transitions:**
-- Push/Pop: 320ms ease-out with subtle fade
-- Modal present: 280ms spring (damping 0.82), slide from bottom
-- Dismiss: 240ms ease-in
+**icon.png:** Minimalist thread spool forming "T" with needle accent, metallic gold on rich black. WHERE USED: Device home screen
 
-**Micro-interactions:**
-- Card press: scale + background tint, 120ms
-- Button press: scale + brightness, 160ms ease-out
-- Badge appear: fade + scale from 0.94, 220ms ease-out
-- Status change: cross-fade 300ms
+**splash-icon.png:** Simplified icon.png centered on white. WHERE USED: App launch screen
 
-**Loading:**
-- Skeleton: shimmer sweep 1.8s, subtle gradient (#F7F7F7 → #FFFFFF)
-- Spinner: accent color, 1s linear
+**empty-customers.png:** Elegant tape measure coiled in minimal monoline art (2pt stroke), warm gray (#666666) with subtle gold highlights. WHERE USED: Customers screen when empty
 
-### Required Assets
+**empty-orders.png:** Sewing pattern sketch with measuring tools, monoline style, subtle gold accents. WHERE USED: Orders screen when filtered list empty
 
-**App Icon (icon.png):**
-- Minimalist thread spool forming "T" with needle accent
-- Metallic gold on rich black background
-- WHERE USED: Device home screen
+**empty-team.png:** Tailor's mannequin silhouette, refined line drawing, warm gray. WHERE USED: Team screen when no employees
 
-**Splash Icon (splash-icon.png):**
-- Simplified icon.png, centered on white
-- WHERE USED: App launch screen
+**Logo Wordmark:** "TailorFlow" in Cormorant Garamond Light, subtle thread detail connecting letters. WHERE USED: Dashboard header, login, splash
 
-**Empty State Illustrations:**
-- **empty-customers.png:** Elegant tape measure coiled in minimal line art, warm gray tones
-  - WHERE USED: Customers screen when no customers exist
-- **empty-orders.png:** Sewing pattern sketch with measuring tools, subtle gold accents
-  - WHERE USED: Orders screen when filtered list is empty
-- **empty-team.png:** Tailor's mannequin silhouette, refined line drawing
-  - WHERE USED: Team screen when no employees added
+**Style Note:** All illustrations use monoline style, 2pt stroke, warm gray with gold highlights. Elegant, not busy.
 
-**Logo Wordmark:**
-- "TailorFlow" in custom geometric sans, thin weight
-- Accent thread detail connecting "T" and "F"
-- WHERE USED: Dashboard header, login screen, splash
+## Accessibility
 
-**Style Note:** All illustrations use monoline style, 2pt stroke weight, warm gray (#666666) with subtle gold highlights. Avoid busy details—prioritize elegance.
-
-### Accessibility
 - Touch targets: 44pt minimum
 - Contrast: 4.5:1 text, 3:1 UI components
 - Haptic feedback on primary actions
