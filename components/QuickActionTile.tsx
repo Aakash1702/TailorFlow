@@ -1,14 +1,15 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle, StyleProp } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ThemedText } from "./ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Shadows, Colors } from "@/constants/theme";
+import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 
 interface QuickActionTileProps {
   title: string;
   icon: keyof typeof Feather.glyphMap;
+  gradientColors: [string, string];
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
 }
@@ -16,32 +17,34 @@ interface QuickActionTileProps {
 export function QuickActionTile({
   title,
   icon,
+  gradientColors,
   onPress,
   style,
 }: QuickActionTileProps) {
-  const { theme } = useTheme();
-
   return (
     <AnimatedPressable
       onPress={onPress}
       style={[
         styles.container,
-        {
-          backgroundColor: theme.backgroundDefault,
-          borderColor: theme.border,
-        },
         Shadows.level1,
         style,
       ]}
-      scaleValue={0.97}
-      opacityValue={0.92}
+      scaleValue={0.94}
+      opacityValue={0.9}
     >
-      <View style={[styles.iconWrapper, { backgroundColor: theme.backgroundSecondary }]}>
-        <Feather name={icon} size={22} color={theme.text} />
-      </View>
-      <ThemedText style={[styles.title, { color: theme.text }]}>
-        {title}
-      </ThemedText>
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
+      >
+        <View style={styles.iconCircle}>
+          <Feather name={icon} size={24} color="#FFFFFF" />
+        </View>
+        <ThemedText style={styles.title}>
+          {title}
+        </ThemedText>
+      </LinearGradient>
     </AnimatedPressable>
   );
 }
@@ -50,24 +53,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     minWidth: "30%",
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    alignItems: "center",
-    gap: Spacing.md,
+    borderRadius: 20,
+    overflow: "hidden",
   },
-  iconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.md,
+  gradient: {
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  iconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
     textAlign: "center",
     lineHeight: 18,
+    color: "#FFFFFF",
   },
 });

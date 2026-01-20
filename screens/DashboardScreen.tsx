@@ -33,6 +33,19 @@ type RootTabParamList = {
   MoreTab: NavigatorScreenParams<MoreStackParamList> | undefined;
 };
 
+const GRADIENTS = {
+  coral: ["#FF6B6B", "#FF8E53"] as [string, string],
+  emerald: ["#11998E", "#38EF7D"] as [string, string],
+  gold: ["#F2994A", "#F2C94C"] as [string, string],
+  purple: ["#667EEA", "#764BA2"] as [string, string],
+  blue: ["#4FACFE", "#00F2FE"] as [string, string],
+  rose: ["#FF758C", "#FF7EB3"] as [string, string],
+  mint: ["#0BA360", "#3CBA92"] as [string, string],
+  sunset: ["#FA709A", "#FEE140"] as [string, string],
+  ocean: ["#2193B0", "#6DD5ED"] as [string, string],
+  lavender: ["#A18CD1", "#FBC2EB"] as [string, string],
+};
+
 export default function DashboardScreen() {
   const { theme } = useTheme();
   const { getOrders, getPayments, getActivities, isOnline, isSyncing } = useData();
@@ -99,41 +112,42 @@ export default function DashboardScreen() {
     {
       title: "Active Orders",
       value: stats.activeOrders.toString(),
-      icon: "clock" as const,
-      accentColor: theme.inProgress,
+      icon: "layers" as const,
+      gradientColors: GRADIENTS.coral,
     },
     {
-      title: "Completed Today",
+      title: "Completed",
       value: stats.completedToday.toString(),
       icon: "check-circle" as const,
-      accentColor: theme.completed,
+      gradientColors: GRADIENTS.emerald,
     },
     {
-      title: "Today's Revenue",
+      title: "Revenue",
       value: formatCurrency(stats.todayRevenue),
       icon: "trending-up" as const,
-      accentColor: theme.accent,
+      gradientColors: GRADIENTS.gold,
     },
     {
-      title: "Pending Payments",
+      title: "Pending",
       value: formatCurrency(stats.pendingPayments),
-      icon: "dollar-sign" as const,
-      accentColor: theme.warning,
+      icon: "clock" as const,
+      gradientColors: GRADIENTS.purple,
     },
   ];
 
   const quickActions: Array<{
     title: string;
     icon: keyof typeof Feather.glyphMap;
+    gradientColors: [string, string];
     tab: keyof RootTabParamList;
     screen?: keyof MoreStackParamList;
   }> = [
-    { title: "Customers", icon: "users", tab: "CustomersTab" },
-    { title: "Orders", icon: "shopping-bag", tab: "OrdersTab" },
-    { title: "Employees", icon: "briefcase", tab: "EmployeesTab" },
-    { title: "Payments", icon: "credit-card", tab: "MoreTab", screen: "Payments" },
-    { title: "Analytics", icon: "bar-chart-2", tab: "MoreTab", screen: "Analytics" },
-    { title: "Settings", icon: "settings", tab: "MoreTab", screen: "Settings" },
+    { title: "Customers", icon: "users", gradientColors: GRADIENTS.rose, tab: "CustomersTab" },
+    { title: "Orders", icon: "package", gradientColors: GRADIENTS.blue, tab: "OrdersTab" },
+    { title: "Team", icon: "user-check", gradientColors: GRADIENTS.mint, tab: "EmployeesTab" },
+    { title: "Payments", icon: "credit-card", gradientColors: GRADIENTS.sunset, tab: "MoreTab", screen: "Payments" },
+    { title: "Analytics", icon: "pie-chart", gradientColors: GRADIENTS.ocean, tab: "MoreTab", screen: "Analytics" },
+    { title: "Settings", icon: "sliders", gradientColors: GRADIENTS.lavender, tab: "MoreTab", screen: "Settings" },
   ];
 
   return (
@@ -142,7 +156,7 @@ export default function DashboardScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={theme.primary}
+          tintColor={theme.accent}
         />
       }
     >
@@ -153,7 +167,7 @@ export default function DashboardScreen() {
             title={stat.title}
             value={stat.value}
             icon={stat.icon}
-            accentColor={stat.accentColor}
+            gradientColors={stat.gradientColors}
           />
         ))}
       </Animated.View>
@@ -166,6 +180,7 @@ export default function DashboardScreen() {
               key={index}
               title={action.title}
               icon={action.icon}
+              gradientColors={action.gradientColors}
               onPress={() => {
                 if (action.tab === "MoreTab" && action.screen) {
                   navigation.navigate("MoreTab", { screen: action.screen });
@@ -187,19 +202,19 @@ export default function DashboardScreen() {
       <Animated.View style={activityAnimatedStyle}>
         <SectionHeader title="Recent Activity" />
         {recentActivity.length === 0 ? (
-          <View style={[styles.emptyState, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={[styles.emptyIconContainer, { backgroundColor: theme.backgroundSecondary }]}>
-              <Feather name="activity" size={28} color={theme.textSecondary} />
+          <View style={styles.emptyState}>
+            <View style={styles.emptyIconContainer}>
+              <Feather name="inbox" size={32} color="#C7C7CC" />
             </View>
-            <ThemedText type="bodyMedium" style={{ color: theme.textSecondary, marginTop: Spacing.md }}>
+            <ThemedText style={styles.emptyTitle}>
               No recent activity
             </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: Spacing.xs }}>
+            <ThemedText style={styles.emptySubtitle}>
               Activity will appear here as you use the app
             </ThemedText>
           </View>
         ) : (
-          <View style={[styles.activityList, { backgroundColor: theme.backgroundDefault }]}>
+          <View style={styles.activityList}>
             {recentActivity.map((activity, index) => (
               <ActivityListItem
                 key={activity.id}
@@ -228,19 +243,34 @@ const styles = StyleSheet.create({
     marginBottom: Spacing["2xl"],
   },
   emptyState: {
+    backgroundColor: "#FFFFFF",
     padding: Spacing["2xl"],
-    borderRadius: BorderRadius.lg,
+    borderRadius: 20,
     alignItems: "center",
   },
   emptyIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: BorderRadius.full,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#F2F2F7",
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: Spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1C1C1E",
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    textAlign: "center",
   },
   activityList: {
-    borderRadius: BorderRadius.lg,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
     overflow: "hidden",
   },
 });
