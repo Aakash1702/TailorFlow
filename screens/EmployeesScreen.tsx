@@ -1,19 +1,26 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenFlatList } from "@/components/ScreenFlatList";
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
+import { GradientAvatar } from "@/components/GradientAvatar";
+import { GradientFAB } from "@/components/GradientFAB";
 import { useData } from "@/contexts/DataContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, Shadows } from "@/constants/theme";
 import { EmployeesStackParamList } from "@/navigation/EmployeesStackNavigator";
 import { Employee } from "@/types";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
+const ROLE_COLORS: Record<Employee["role"], [string, string]> = {
+  admin: ["#667EEA", "#764BA2"],
+  manager: ["#4FACFE", "#00F2FE"],
+  tailor: ["#F2994A", "#F2C94C"],
+};
+
 export default function EmployeesScreen() {
-  const { theme } = useTheme();
   const { getEmployees } = useData();
   const navigation = useNavigation<NativeStackNavigationProp<EmployeesStackParamList>>();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -37,68 +44,64 @@ export default function EmployeesScreen() {
     setRefreshing(false);
   };
 
-  const getRoleBadgeColor = (role: Employee["role"]) => {
-    switch (role) {
-      case "admin":
-        return theme.primary;
-      case "manager":
-        return theme.info;
-      case "tailor":
-        return theme.accent;
-      default:
-        return theme.textSecondary;
-    }
+  const renderEmployee = ({ item }: { item: Employee }) => {
+    const roleColors = ROLE_COLORS[item.role] || ROLE_COLORS.tailor;
+    
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.employeeCard,
+          Shadows.level1,
+          { opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+        ]}
+        onPress={() => navigation.navigate("EmployeeDetail", { employeeId: item.id })}
+      >
+        <GradientAvatar name={item.name} size={50} gradientColors={roleColors} />
+        <View style={styles.employeeInfo}>
+          <View style={styles.nameRow}>
+            <ThemedText style={styles.employeeName} numberOfLines={1}>
+              {item.name}
+            </ThemedText>
+            <LinearGradient
+              colors={roleColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.roleBadge}
+            >
+              <ThemedText style={styles.roleText}>
+                {item.role}
+              </ThemedText>
+            </LinearGradient>
+          </View>
+          <ThemedText style={styles.employeePhone}>
+            {item.phone}
+          </ThemedText>
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Feather name="briefcase" size={12} color="#8E8E93" />
+              <ThemedText style={styles.statText}>
+                {item.assignedOrders.length} orders
+              </ThemedText>
+            </View>
+            <View style={[
+              styles.statusDot,
+              { backgroundColor: item.isActive ? "#34D399" : "#F87171" }
+            ]} />
+            <ThemedText style={[
+              styles.statusText,
+              { color: item.isActive ? "#059669" : "#DC2626" }
+            ]}>
+              {item.isActive ? "Active" : "Inactive"}
+            </ThemedText>
+          </View>
+        </View>
+        <Feather name="chevron-right" size={20} color="#C7C7CC" />
+      </Pressable>
+    );
   };
 
-  const renderEmployee = ({ item }: { item: Employee }) => (
-    <Pressable
-      style={({ pressed }) => [
-        styles.employeeCard,
-        { backgroundColor: theme.backgroundDefault, opacity: pressed ? 0.8 : 1 },
-      ]}
-      onPress={() => navigation.navigate("EmployeeDetail", { employeeId: item.id })}
-    >
-      <View style={[styles.avatar, { backgroundColor: theme.accent + "20" }]}>
-        <ThemedText type="h3" style={{ color: theme.accent }}>
-          {item.name.charAt(0).toUpperCase()}
-        </ThemedText>
-      </View>
-      <View style={styles.employeeInfo}>
-        <View style={styles.nameRow}>
-          <ThemedText type="h4" numberOfLines={1}>
-            {item.name}
-          </ThemedText>
-          <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(item.role) + "15" }]}>
-            <ThemedText
-              type="caption"
-              style={{ color: getRoleBadgeColor(item.role), textTransform: "capitalize" }}
-            >
-              {item.role}
-            </ThemedText>
-          </View>
-        </View>
-        <ThemedText type="small" style={{ color: theme.textSecondary }}>
-          {item.phone}
-        </ThemedText>
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Feather name="briefcase" size={12} color={theme.textSecondary} />
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              {item.assignedOrders.length} orders
-            </ThemedText>
-          </View>
-          <View style={[styles.statusDot, { backgroundColor: item.isActive ? theme.completed : theme.error }]} />
-          <ThemedText type="caption" style={{ color: item.isActive ? theme.completed : theme.error }}>
-            {item.isActive ? "Active" : "Inactive"}
-          </ThemedText>
-        </View>
-      </View>
-      <Feather name="chevron-right" size={20} color={theme.textSecondary} />
-    </Pressable>
-  );
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={styles.container}>
       <ScreenFlatList
         data={employees}
         renderItem={renderEmployee}
@@ -107,31 +110,22 @@ export default function EmployeesScreen() {
         onRefresh={onRefresh}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Feather name="briefcase" size={48} color={theme.textSecondary} />
-            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.lg }}>
-              No employees yet
-            </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: "center" }}>
+            <View style={styles.emptyIconContainer}>
+              <Feather name="user-check" size={32} color="#C7C7CC" />
+            </View>
+            <ThemedText style={styles.emptyTitle}>No team members yet</ThemedText>
+            <ThemedText style={styles.emptySubtitle}>
               Add your first employee to manage your team
             </ThemedText>
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: Spacing.md }} />}
       />
-      <Pressable
-        style={({ pressed }) => [
-          styles.fab,
-          {
-            backgroundColor: theme.primary,
-            bottom: tabBarHeight + Spacing.xl,
-            opacity: pressed ? 0.9 : 1,
-            transform: [{ scale: pressed ? 0.95 : 1 }],
-          },
-        ]}
+      <GradientFAB
         onPress={() => navigation.navigate("AddEmployee")}
-      >
-        <Feather name="plus" size={24} color="#FFFFFF" />
-      </Pressable>
+        bottom={tabBarHeight + Spacing.xl}
+        gradientColors={["#0BA360", "#3CBA92"]}
+      />
     </View>
   );
 }
@@ -139,67 +133,95 @@ export default function EmployeesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F2F2F7",
   },
   employeeCard: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#FFFFFF",
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: 16,
     gap: Spacing.md,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
   },
   employeeInfo: {
     flex: 1,
-    gap: Spacing.xs,
+    gap: 4,
   },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
   },
+  employeeName: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1C1C1E",
+    flexShrink: 1,
+  },
   roleBadge: {
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.full,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  roleText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textTransform: "capitalize",
+  },
+  employeePhone: {
+    fontSize: 14,
+    color: "#8E8E93",
   },
   statsRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
+    marginTop: 2,
   },
   stat: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
+    gap: 4,
+  },
+  statText: {
+    fontSize: 12,
+    color: "#8E8E93",
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
+    marginLeft: Spacing.sm,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   emptyState: {
+    backgroundColor: "#FFFFFF",
+    padding: Spacing["2xl"],
+    borderRadius: 20,
     alignItems: "center",
-    paddingVertical: Spacing["5xl"],
-    gap: Spacing.sm,
   },
-  fab: {
-    position: "absolute",
-    right: Spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.full,
+  emptyIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#F2F2F7",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    marginBottom: Spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1C1C1E",
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    textAlign: "center",
   },
 });

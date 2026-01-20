@@ -1,28 +1,28 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenFlatList } from "@/components/ScreenFlatList";
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
+import { GradientFAB } from "@/components/GradientFAB";
 import { useData } from "@/contexts/DataContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, Shadows } from "@/constants/theme";
 import { OrdersStackParamList } from "@/navigation/OrdersStackNavigator";
 import { formatCurrency, formatDate } from "@/utils/storage";
 import { Order, OrderStatus } from "@/types";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
-const STATUS_FILTERS: { key: OrderStatus | "all"; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "pending", label: "Pending" },
-  { key: "inProgress", label: "In Progress" },
-  { key: "completed", label: "Completed" },
-  { key: "delivered", label: "Delivered" },
-];
+const STATUS_CONFIG: Record<OrderStatus | "all", { label: string; colors: [string, string] }> = {
+  all: { label: "All", colors: ["#667EEA", "#764BA2"] },
+  pending: { label: "Pending", colors: ["#F2994A", "#F2C94C"] },
+  inProgress: { label: "In Progress", colors: ["#4FACFE", "#00F2FE"] },
+  completed: { label: "Completed", colors: ["#11998E", "#38EF7D"] },
+  delivered: { label: "Delivered", colors: ["#A18CD1", "#FBC2EB"] },
+};
 
 export default function OrdersScreen() {
-  const { theme } = useTheme();
   const { getOrders } = useData();
   const navigation = useNavigation<NativeStackNavigationProp<OrdersStackParamList>>();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -51,50 +51,57 @@ export default function OrdersScreen() {
     (o) => statusFilter === "all" || o.status === statusFilter
   );
 
-  const getStatusColor = (status: OrderStatus) => {
-    return theme[status];
+  const getStatusColors = (status: OrderStatus): [string, string] => {
+    return STATUS_CONFIG[status]?.colors || ["#8E8E93", "#8E8E93"];
   };
 
   const renderOrder = ({ item }: { item: Order }) => {
     const isPaid = item.paidAmount >= item.amount;
     const isOverdue = new Date(item.dueDate) < new Date() && item.status !== "delivered";
+    const statusColors = getStatusColors(item.status);
 
     return (
       <Pressable
         style={({ pressed }) => [
           styles.orderCard,
-          { backgroundColor: theme.backgroundDefault, opacity: pressed ? 0.8 : 1 },
+          Shadows.level1,
+          { opacity: pressed ? 0.9 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
         ]}
         onPress={() => navigation.navigate("OrderDetail", { orderId: item.id })}
       >
         <View style={styles.orderHeader}>
           <View style={styles.orderInfo}>
-            <ThemedText type="h4" numberOfLines={1} style={{ flexShrink: 1 }}>
+            <ThemedText style={styles.orderTitle} numberOfLines={1}>
               {item.description}
             </ThemedText>
-            <ThemedText type="small" numberOfLines={1} style={{ color: theme.textSecondary }}>
+            <ThemedText style={styles.customerName} numberOfLines={1}>
               {item.customerName}
             </ThemedText>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + "15", flexShrink: 0 }]}>
-            <ThemedText type="caption" numberOfLines={1} style={{ color: getStatusColor(item.status), textTransform: "capitalize" }}>
+          <LinearGradient
+            colors={statusColors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.statusBadge}
+          >
+            <ThemedText style={styles.statusText}>
               {item.status === "inProgress" ? "In Progress" : item.status}
             </ThemedText>
-          </View>
+          </LinearGradient>
         </View>
         <View style={styles.orderFooter}>
           <View style={styles.orderMeta}>
-            <Feather name="calendar" size={14} color={isOverdue ? theme.error : theme.textSecondary} />
-            <ThemedText type="caption" numberOfLines={1} style={{ color: isOverdue ? theme.error : theme.textSecondary, flexShrink: 1 }}>
+            <Feather name="calendar" size={14} color={isOverdue ? "#DC2626" : "#8E8E93"} />
+            <ThemedText style={[styles.metaText, isOverdue && { color: "#DC2626" }]}>
               Due {formatDate(item.dueDate)}
             </ThemedText>
           </View>
           <View style={styles.orderAmount}>
-            <ThemedText type="body" numberOfLines={1} style={{ color: theme.primary, fontWeight: "600" }}>
+            <ThemedText style={styles.amountText}>
               {formatCurrency(item.amount)}
             </ThemedText>
             {!isPaid ? (
-              <ThemedText type="caption" numberOfLines={1} style={{ color: theme.error }}>
+              <ThemedText style={styles.dueText}>
                 {formatCurrency(item.amount - item.paidAmount)} due
               </ThemedText>
             ) : null}
@@ -105,7 +112,7 @@ export default function OrdersScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={styles.container}>
       <ScreenFlatList
         data={filteredOrders}
         renderItem={renderOrder}
@@ -119,58 +126,56 @@ export default function OrdersScreen() {
             style={styles.filterContainer}
             contentContainerStyle={styles.filterContent}
           >
-            {STATUS_FILTERS.map((filter) => (
-              <Pressable
-                key={filter.key}
-                style={[
-                  styles.filterChip,
-                  {
-                    backgroundColor:
-                      statusFilter === filter.key ? theme.primary : theme.backgroundDefault,
-                    borderColor: statusFilter === filter.key ? theme.primary : theme.border,
-                  },
-                ]}
-                onPress={() => setStatusFilter(filter.key)}
-              >
-                <ThemedText
-                  type="small"
-                  style={{
-                    color: statusFilter === filter.key ? "#FFFFFF" : theme.text,
-                  }}
+            {(Object.keys(STATUS_CONFIG) as (OrderStatus | "all")[]).map((key) => {
+              const config = STATUS_CONFIG[key];
+              const isActive = statusFilter === key;
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => setStatusFilter(key)}
+                  style={{ marginRight: Spacing.sm }}
                 >
-                  {filter.label}
-                </ThemedText>
-              </Pressable>
-            ))}
+                  {isActive ? (
+                    <LinearGradient
+                      colors={config.colors}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.filterChip}
+                    >
+                      <ThemedText style={styles.filterTextActive}>
+                        {config.label}
+                      </ThemedText>
+                    </LinearGradient>
+                  ) : (
+                    <View style={[styles.filterChip, styles.filterChipInactive]}>
+                      <ThemedText style={styles.filterTextInactive}>
+                        {config.label}
+                      </ThemedText>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
           </ScrollView>
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Feather name="shopping-bag" size={48} color={theme.textSecondary} />
-            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.lg }}>
-              No orders found
-            </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: "center" }}>
+            <View style={styles.emptyIconContainer}>
+              <Feather name="package" size={32} color="#C7C7CC" />
+            </View>
+            <ThemedText style={styles.emptyTitle}>No orders found</ThemedText>
+            <ThemedText style={styles.emptySubtitle}>
               {statusFilter !== "all" ? "Try a different filter" : "Create your first order to get started"}
             </ThemedText>
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: Spacing.md }} />}
       />
-      <Pressable
-        style={({ pressed }) => [
-          styles.fab,
-          {
-            backgroundColor: theme.primary,
-            bottom: tabBarHeight + Spacing.xl,
-            opacity: pressed ? 0.9 : 1,
-            transform: [{ scale: pressed ? 0.95 : 1 }],
-          },
-        ]}
+      <GradientFAB
         onPress={() => navigation.navigate("AddOrder")}
-      >
-        <Feather name="plus" size={24} color="#FFFFFF" />
-      </Pressable>
+        bottom={tabBarHeight + Spacing.xl}
+        gradientColors={["#4FACFE", "#00F2FE"]}
+      />
     </View>
   );
 }
@@ -178,76 +183,121 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F2F2F7",
   },
   filterContainer: {
     marginBottom: Spacing.lg,
-    marginHorizontal: -Spacing.xl,
   },
   filterContent: {
-    paddingHorizontal: Spacing.xl,
-    gap: Spacing.sm,
+    paddingRight: Spacing.lg,
   },
   filterChip: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
+    borderRadius: 20,
+  },
+  filterChipInactive: {
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
+    borderColor: "#E5E5EA",
+  },
+  filterTextActive: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  filterTextInactive: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#8E8E93",
   },
   orderCard: {
+    backgroundColor: "#FFFFFF",
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    gap: Spacing.md,
+    borderRadius: 16,
   },
   orderHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: Spacing.md,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
   },
   orderInfo: {
     flex: 1,
-    gap: Spacing.xs,
+    gap: 4,
+  },
+  orderTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1C1C1E",
+  },
+  customerName: {
+    fontSize: 14,
+    color: "#8E8E93",
   },
   statusBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textTransform: "capitalize",
   },
   orderFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-end",
-    gap: Spacing.md,
+    alignItems: "center",
   },
   orderMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.xs,
-    flex: 1,
-    minWidth: 0,
+    gap: 6,
+  },
+  metaText: {
+    fontSize: 13,
+    color: "#8E8E93",
   },
   orderAmount: {
     alignItems: "flex-end",
-    gap: Spacing.xs,
-    flexShrink: 0,
+    gap: 2,
+  },
+  amountText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#1C1C1E",
+  },
+  dueText: {
+    fontSize: 12,
+    color: "#DC2626",
   },
   emptyState: {
+    backgroundColor: "#FFFFFF",
+    padding: Spacing["2xl"],
+    borderRadius: 20,
     alignItems: "center",
-    paddingVertical: Spacing["5xl"],
-    gap: Spacing.sm,
   },
-  fab: {
-    position: "absolute",
-    right: Spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.full,
+  emptyIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#F2F2F7",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    marginBottom: Spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1C1C1E",
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    textAlign: "center",
   },
 });

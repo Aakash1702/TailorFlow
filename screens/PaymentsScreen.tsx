@@ -1,34 +1,44 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ScreenFlatList } from "@/components/ScreenFlatList";
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
+import { GradientFAB } from "@/components/GradientFAB";
 import { useData } from "@/contexts/DataContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, Shadows } from "@/constants/theme";
 import { MoreStackParamList } from "@/navigation/MoreStackNavigator";
 import { formatCurrency, formatDate, getRelativeTime } from "@/utils/storage";
 import { Payment, Order } from "@/types";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 type PaymentFilter = "all" | "today" | "week" | "month";
 
-const FILTERS: { key: PaymentFilter; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "today", label: "Today" },
-  { key: "week", label: "This Week" },
-  { key: "month", label: "This Month" },
+const FILTERS: { key: PaymentFilter; label: string; colors: [string, string] }[] = [
+  { key: "all", label: "All", colors: ["#667EEA", "#764BA2"] },
+  { key: "today", label: "Today", colors: ["#11998E", "#38EF7D"] },
+  { key: "week", label: "This Week", colors: ["#4FACFE", "#00F2FE"] },
+  { key: "month", label: "This Month", colors: ["#FA709A", "#FEE140"] },
 ];
 
+const PAYMENT_MODE_CONFIG: Record<Payment["paymentMode"], { icon: keyof typeof Feather.glyphMap; colors: [string, string] }> = {
+  cash: { icon: "dollar-sign", colors: ["#11998E", "#38EF7D"] },
+  card: { icon: "credit-card", colors: ["#667EEA", "#764BA2"] },
+  upi: { icon: "smartphone", colors: ["#FA709A", "#FEE140"] },
+  wallet: { icon: "briefcase", colors: ["#4FACFE", "#00F2FE"] },
+  bank: { icon: "home", colors: ["#A18CD1", "#FBC2EB"] },
+};
+
 export default function PaymentsScreen() {
-  const { theme } = useTheme();
   const { getPayments, getOrders } = useData();
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<PaymentFilter>("all");
   const [refreshing, setRefreshing] = useState(false);
+  const tabBarHeight = useBottomTabBarHeight();
 
   const loadData = useCallback(async () => {
     const paymentData = await getPayments();
@@ -71,49 +81,40 @@ export default function PaymentsScreen() {
   const totalFiltered = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
   const pendingPayments = orders.reduce((sum, o) => sum + (o.amount - o.paidAmount), 0);
 
-  const getPaymentModeIcon = (mode: Payment["paymentMode"]) => {
-    switch (mode) {
-      case "cash":
-        return "dollar-sign";
-      case "card":
-        return "credit-card";
-      case "upi":
-        return "smartphone";
-      case "wallet":
-        return "briefcase";
-      case "bank":
-        return "home";
-      default:
-        return "dollar-sign";
-    }
+  const renderPayment = ({ item }: { item: Payment }) => {
+    const config = PAYMENT_MODE_CONFIG[item.paymentMode] || PAYMENT_MODE_CONFIG.cash;
+    return (
+      <View style={[styles.paymentCard, Shadows.level1]}>
+        <LinearGradient
+          colors={config.colors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.paymentIcon}
+        >
+          <Feather name={config.icon} size={18} color="#FFFFFF" />
+        </LinearGradient>
+        <View style={styles.paymentInfo}>
+          <ThemedText style={styles.paymentCustomer} numberOfLines={1}>
+            {item.customerName}
+          </ThemedText>
+          <ThemedText style={styles.paymentMode}>
+            {item.paymentMode} payment
+          </ThemedText>
+        </View>
+        <View style={styles.paymentAmount}>
+          <ThemedText style={styles.amountText}>
+            +{formatCurrency(item.amount)}
+          </ThemedText>
+          <ThemedText style={styles.timeText}>
+            {getRelativeTime(item.createdAt)}
+          </ThemedText>
+        </View>
+      </View>
+    );
   };
 
-  const renderPayment = ({ item }: { item: Payment }) => (
-    <View style={[styles.paymentCard, { backgroundColor: theme.backgroundDefault }]}>
-      <View style={[styles.paymentIcon, { backgroundColor: theme.completed + "15" }]}>
-        <Feather name={getPaymentModeIcon(item.paymentMode)} size={18} color={theme.completed} />
-      </View>
-      <View style={styles.paymentInfo}>
-        <ThemedText type="body" numberOfLines={1}>
-          {item.customerName}
-        </ThemedText>
-        <ThemedText type="caption" style={{ color: theme.textSecondary, textTransform: "capitalize" }}>
-          {item.paymentMode} payment
-        </ThemedText>
-      </View>
-      <View style={styles.paymentAmount}>
-        <ThemedText type="body" style={{ color: theme.completed, fontWeight: "600" }}>
-          +{formatCurrency(item.amount)}
-        </ThemedText>
-        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-          {getRelativeTime(item.createdAt)}
-        </ThemedText>
-      </View>
-    </View>
-  );
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View style={styles.container}>
       <ScreenFlatList
         data={filteredPayments}
         renderItem={renderPayment}
@@ -123,24 +124,32 @@ export default function PaymentsScreen() {
         ListHeaderComponent={
           <>
             <View style={styles.summaryRow}>
-              <View style={[styles.summaryCard, { backgroundColor: theme.backgroundDefault }]}>
-                <Feather name="trending-up" size={20} color={theme.completed} />
-                <ThemedText type="h3" style={{ color: theme.completed }}>
+              <LinearGradient
+                colors={["#11998E", "#38EF7D"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.summaryCard, Shadows.level1]}
+              >
+                <Feather name="trending-up" size={24} color="#FFFFFF" />
+                <ThemedText style={styles.summaryAmount}>
                   {formatCurrency(totalFiltered)}
                 </ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  {filter === "all" ? "Total Received" : `${FILTERS.find((f) => f.key === filter)?.label}`}
+                <ThemedText style={styles.summaryLabel}>
+                  {filter === "all" ? "Total Received" : FILTERS.find((f) => f.key === filter)?.label}
                 </ThemedText>
-              </View>
-              <View style={[styles.summaryCard, { backgroundColor: theme.backgroundDefault }]}>
-                <Feather name="alert-circle" size={20} color={theme.pending} />
-                <ThemedText type="h3" style={{ color: theme.pending }}>
+              </LinearGradient>
+              <LinearGradient
+                colors={["#F2994A", "#F2C94C"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.summaryCard, Shadows.level1]}
+              >
+                <Feather name="clock" size={24} color="#FFFFFF" />
+                <ThemedText style={styles.summaryAmount}>
                   {formatCurrency(pendingPayments)}
                 </ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  Pending
-                </ThemedText>
-              </View>
+                <ThemedText style={styles.summaryLabel}>Pending</ThemedText>
+              </LinearGradient>
             </View>
 
             <ScrollView
@@ -149,59 +158,54 @@ export default function PaymentsScreen() {
               style={styles.filterContainer}
               contentContainerStyle={styles.filterContent}
             >
-              {FILTERS.map((f) => (
-                <Pressable
-                  key={f.key}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: filter === f.key ? theme.primary : theme.backgroundDefault,
-                      borderColor: filter === f.key ? theme.primary : theme.border,
-                    },
-                  ]}
-                  onPress={() => setFilter(f.key)}
-                >
-                  <ThemedText
-                    type="small"
-                    style={{ color: filter === f.key ? "#FFFFFF" : theme.text }}
+              {FILTERS.map((f) => {
+                const isActive = filter === f.key;
+                return (
+                  <Pressable
+                    key={f.key}
+                    onPress={() => setFilter(f.key)}
+                    style={{ marginRight: Spacing.sm }}
                   >
-                    {f.label}
-                  </ThemedText>
-                </Pressable>
-              ))}
+                    {isActive ? (
+                      <LinearGradient
+                        colors={f.colors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.filterChip}
+                      >
+                        <ThemedText style={styles.filterTextActive}>{f.label}</ThemedText>
+                      </LinearGradient>
+                    ) : (
+                      <View style={[styles.filterChip, styles.filterChipInactive]}>
+                        <ThemedText style={styles.filterTextInactive}>{f.label}</ThemedText>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
             </ScrollView>
 
-            <ThemedText type="h4" style={styles.sectionTitle}>
-              Payment History
-            </ThemedText>
+            <ThemedText style={styles.sectionTitle}>Payment History</ThemedText>
           </>
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Feather name="credit-card" size={48} color={theme.textSecondary} />
-            <ThemedText type="body" style={{ color: theme.textSecondary, marginTop: Spacing.lg }}>
-              No payments found
-            </ThemedText>
-            <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: "center" }}>
-              {filter !== "all" ? "Try a different filter" : "Record your first payment from an order"}
+            <View style={styles.emptyIconContainer}>
+              <Feather name="credit-card" size={32} color="#C7C7CC" />
+            </View>
+            <ThemedText style={styles.emptyTitle}>No payments yet</ThemedText>
+            <ThemedText style={styles.emptySubtitle}>
+              Payments will appear here when recorded
             </ThemedText>
           </View>
         }
         ItemSeparatorComponent={() => <View style={{ height: Spacing.md }} />}
       />
-      <Pressable
-        style={({ pressed }) => [
-          styles.fab,
-          {
-            backgroundColor: theme.primary,
-            opacity: pressed ? 0.9 : 1,
-            transform: [{ scale: pressed ? 0.95 : 1 }],
-          },
-        ]}
+      <GradientFAB
         onPress={() => navigation.navigate("AddPayment")}
-      >
-        <Feather name="plus" size={24} color="#FFFFFF" />
-      </Pressable>
+        bottom={tabBarHeight + Spacing.xl}
+        gradientColors={["#FA709A", "#FEE140"]}
+      />
     </View>
   );
 }
@@ -209,6 +213,7 @@ export default function PaymentsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F2F2F7",
   },
   summaryRow: {
     flexDirection: "row",
@@ -218,67 +223,119 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: 16,
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  summaryAmount: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  summaryLabel: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.8)",
   },
   filterContainer: {
     marginBottom: Spacing.lg,
-    marginHorizontal: -Spacing.xl,
   },
   filterContent: {
-    paddingHorizontal: Spacing.xl,
-    gap: Spacing.sm,
+    paddingRight: Spacing.lg,
   },
   filterChip: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
+    borderRadius: 20,
+  },
+  filterChipInactive: {
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
+    borderColor: "#E5E5EA",
+  },
+  filterTextActive: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  filterTextInactive: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#8E8E93",
   },
   sectionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#8E8E93",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
     marginBottom: Spacing.md,
   },
   paymentCard: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#FFFFFF",
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: 16,
     gap: Spacing.md,
   },
   paymentIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.full,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   paymentInfo: {
     flex: 1,
-    gap: Spacing.xs,
+    gap: 2,
+  },
+  paymentCustomer: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1C1C1E",
+  },
+  paymentMode: {
+    fontSize: 13,
+    color: "#8E8E93",
+    textTransform: "capitalize",
   },
   paymentAmount: {
     alignItems: "flex-end",
-    gap: Spacing.xs,
+    gap: 2,
+  },
+  amountText: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#059669",
+  },
+  timeText: {
+    fontSize: 12,
+    color: "#8E8E93",
   },
   emptyState: {
+    backgroundColor: "#FFFFFF",
+    padding: Spacing["2xl"],
+    borderRadius: 20,
     alignItems: "center",
-    paddingVertical: Spacing["5xl"],
-    gap: Spacing.sm,
   },
-  fab: {
-    position: "absolute",
-    right: Spacing.xl,
-    bottom: Spacing.xl,
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.full,
+  emptyIconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#F2F2F7",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    marginBottom: Spacing.md,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1C1C1E",
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    textAlign: "center",
   },
 });
