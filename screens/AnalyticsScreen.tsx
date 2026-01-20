@@ -1,24 +1,38 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { GradientAvatar } from "@/components/GradientAvatar";
+import { Spacing, Shadows } from "@/constants/theme";
 import { getOrders, getPayments, getCustomers, formatCurrency } from "@/utils/storage";
 import { Order, Payment, Customer } from "@/types";
 
 type DateRange = "7d" | "30d" | "all";
 
-const DATE_RANGES: { key: DateRange; label: string }[] = [
-  { key: "7d", label: "7 Days" },
-  { key: "30d", label: "30 Days" },
-  { key: "all", label: "All Time" },
+const DATE_RANGES: { key: DateRange; label: string; colors: [string, string] }[] = [
+  { key: "7d", label: "7 Days", colors: ["#11998E", "#38EF7D"] },
+  { key: "30d", label: "30 Days", colors: ["#4FACFE", "#00F2FE"] },
+  { key: "all", label: "All Time", colors: ["#667EEA", "#764BA2"] },
 ];
 
+const KPI_CONFIG: { title: string; icon: keyof typeof Feather.glyphMap; colors: [string, string] }[] = [
+  { title: "Total Revenue", icon: "trending-up", colors: ["#11998E", "#38EF7D"] },
+  { title: "Total Orders", icon: "package", colors: ["#4FACFE", "#00F2FE"] },
+  { title: "Avg. Order Value", icon: "bar-chart-2", colors: ["#F2994A", "#F2C94C"] },
+  { title: "Completion Rate", icon: "check-circle", colors: ["#667EEA", "#764BA2"] },
+];
+
+const STATUS_CONFIG: Record<string, { label: string; colors: [string, string] }> = {
+  pending: { label: "Pending", colors: ["#F2994A", "#F2C94C"] },
+  inProgress: { label: "In Progress", colors: ["#4FACFE", "#00F2FE"] },
+  completed: { label: "Completed", colors: ["#11998E", "#38EF7D"] },
+  delivered: { label: "Delivered", colors: ["#A18CD1", "#FBC2EB"] },
+};
+
 export default function AnalyticsScreen() {
-  const { theme } = useTheme();
   const [orders, setOrders] = useState<Order[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -75,11 +89,11 @@ export default function AnalyticsScreen() {
     delivered: orders.filter((o) => o.status === "delivered").length,
   };
 
-  const kpis = [
-    { title: "Total Revenue", value: formatCurrency(totalRevenue), icon: "trending-up", color: theme.completed },
-    { title: "Total Orders", value: totalOrders.toString(), icon: "shopping-bag", color: theme.info },
-    { title: "Avg. Order Value", value: formatCurrency(avgOrderValue), icon: "bar-chart-2", color: theme.accent },
-    { title: "Completion Rate", value: `${completionRate}%`, icon: "check-circle", color: theme.primary },
+  const kpiValues = [
+    formatCurrency(totalRevenue),
+    totalOrders.toString(),
+    formatCurrency(avgOrderValue),
+    `${completionRate}%`,
   ];
 
   return (
@@ -90,139 +104,110 @@ export default function AnalyticsScreen() {
         style={styles.filterContainer}
         contentContainerStyle={styles.filterContent}
       >
-        {DATE_RANGES.map((range) => (
-          <Pressable
-            key={range.key}
-            style={[
-              styles.filterChip,
-              {
-                backgroundColor: dateRange === range.key ? theme.primary : theme.backgroundDefault,
-                borderColor: dateRange === range.key ? theme.primary : theme.border,
-              },
-            ]}
-            onPress={() => setDateRange(range.key)}
-          >
-            <ThemedText
-              type="small"
-              style={{ color: dateRange === range.key ? "#FFFFFF" : theme.text }}
+        {DATE_RANGES.map((range) => {
+          const isActive = dateRange === range.key;
+          return (
+            <Pressable
+              key={range.key}
+              onPress={() => setDateRange(range.key)}
+              style={{ marginRight: Spacing.sm }}
             >
-              {range.label}
-            </ThemedText>
-          </Pressable>
-        ))}
+              {isActive ? (
+                <LinearGradient
+                  colors={range.colors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.filterChip}
+                >
+                  <ThemedText style={styles.filterTextActive}>{range.label}</ThemedText>
+                </LinearGradient>
+              ) : (
+                <View style={[styles.filterChip, styles.filterChipInactive]}>
+                  <ThemedText style={styles.filterTextInactive}>{range.label}</ThemedText>
+                </View>
+              )}
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Key Metrics
-      </ThemedText>
+      <ThemedText style={styles.sectionTitle}>Key Metrics</ThemedText>
       <View style={styles.kpiGrid}>
-        {kpis.map((kpi, index) => (
-          <View key={index} style={[styles.kpiCard, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={[styles.kpiIcon, { backgroundColor: kpi.color + "15" }]}>
-              <Feather name={kpi.icon as any} size={18} color={kpi.color} />
+        {KPI_CONFIG.map((kpi, index) => (
+          <LinearGradient
+            key={index}
+            colors={kpi.colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.kpiCard, Shadows.level1]}
+          >
+            <View style={styles.kpiIcon}>
+              <Feather name={kpi.icon} size={20} color="#FFFFFF" />
             </View>
-            <ThemedText type="h3" style={{ color: kpi.color }}>
-              {kpi.value}
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              {kpi.title}
-            </ThemedText>
-          </View>
+            <ThemedText style={styles.kpiValue}>{kpiValues[index]}</ThemedText>
+            <ThemedText style={styles.kpiLabel}>{kpi.title}</ThemedText>
+          </LinearGradient>
         ))}
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Order Status Overview
-      </ThemedText>
-      <View style={[styles.statusCard, { backgroundColor: theme.backgroundDefault }]}>
-        <View style={styles.statusRow}>
-          <View style={styles.statusItem}>
-            <View style={[styles.statusDot, { backgroundColor: theme.pending }]} />
-            <ThemedText type="body">Pending</ThemedText>
-          </View>
-          <ThemedText type="h4">{statusCounts.pending}</ThemedText>
-        </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <View style={styles.statusRow}>
-          <View style={styles.statusItem}>
-            <View style={[styles.statusDot, { backgroundColor: theme.inProgress }]} />
-            <ThemedText type="body">In Progress</ThemedText>
-          </View>
-          <ThemedText type="h4">{statusCounts.inProgress}</ThemedText>
-        </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <View style={styles.statusRow}>
-          <View style={styles.statusItem}>
-            <View style={[styles.statusDot, { backgroundColor: theme.completed }]} />
-            <ThemedText type="body">Completed</ThemedText>
-          </View>
-          <ThemedText type="h4">{statusCounts.completed}</ThemedText>
-        </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <View style={styles.statusRow}>
-          <View style={styles.statusItem}>
-            <View style={[styles.statusDot, { backgroundColor: theme.delivered }]} />
-            <ThemedText type="body">Delivered</ThemedText>
-          </View>
-          <ThemedText type="h4">{statusCounts.delivered}</ThemedText>
-        </View>
+      <ThemedText style={styles.sectionTitle}>Order Status</ThemedText>
+      <View style={[styles.statusCard, Shadows.level1]}>
+        {Object.entries(statusCounts).map(([status, count], index) => {
+          const config = STATUS_CONFIG[status];
+          return (
+            <View key={status}>
+              {index > 0 && <View style={styles.divider} />}
+              <View style={styles.statusRow}>
+                <View style={styles.statusItem}>
+                  <LinearGradient
+                    colors={config.colors}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.statusDot}
+                  />
+                  <ThemedText style={styles.statusLabel}>{config.label}</ThemedText>
+                </View>
+                <ThemedText style={styles.statusCount}>{count}</ThemedText>
+              </View>
+            </View>
+          );
+        })}
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Outstanding Balance
-      </ThemedText>
-      <View style={[styles.balanceCard, { backgroundColor: theme.backgroundDefault }]}>
-        <View style={[styles.balanceIcon, { backgroundColor: theme.error + "15" }]}>
-          <Feather name="alert-circle" size={24} color={theme.error} />
-        </View>
-        <ThemedText type="h2" style={{ color: theme.error }}>
-          {formatCurrency(pendingAmount)}
-        </ThemedText>
-        <ThemedText type="body" style={{ color: theme.textSecondary }}>
-          Total pending payments from all orders
-        </ThemedText>
-      </View>
+      <ThemedText style={styles.sectionTitle}>Outstanding Balance</ThemedText>
+      <LinearGradient
+        colors={["#FA709A", "#FEE140"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.balanceCard, Shadows.level1]}
+      >
+        <Feather name="alert-circle" size={28} color="#FFFFFF" />
+        <ThemedText style={styles.balanceAmount}>{formatCurrency(pendingAmount)}</ThemedText>
+        <ThemedText style={styles.balanceLabel}>Total pending from all orders</ThemedText>
+      </LinearGradient>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Top Customers
-      </ThemedText>
+      <ThemedText style={styles.sectionTitle}>Top Customers</ThemedText>
       {topCustomers.length > 0 ? (
-        <View style={[styles.customersCard, { backgroundColor: theme.backgroundDefault }]}>
+        <View style={[styles.customersCard, Shadows.level1]}>
           {topCustomers.map((customer, index) => (
-            <View
-              key={customer.id}
-              style={[
-                styles.customerRow,
-                index < topCustomers.length - 1 && {
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.border,
-                },
-              ]}
-            >
-              <View style={styles.customerRank}>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  #{index + 1}
-                </ThemedText>
-              </View>
-              <View style={[styles.customerAvatar, { backgroundColor: theme.primary + "20" }]}>
-                <ThemedText type="body" style={{ color: theme.primary }}>
-                  {customer.name.charAt(0)}
-                </ThemedText>
-              </View>
-              <View style={styles.customerInfo}>
-                <ThemedText type="body">{customer.name}</ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  {customer.orderCount} orders
-                </ThemedText>
+            <View key={customer.id}>
+              {index > 0 && <View style={styles.divider} />}
+              <View style={styles.customerRow}>
+                <View style={styles.customerRank}>
+                  <ThemedText style={styles.rankText}>#{index + 1}</ThemedText>
+                </View>
+                <GradientAvatar name={customer.name} size={40} />
+                <View style={styles.customerInfo}>
+                  <ThemedText style={styles.customerName}>{customer.name}</ThemedText>
+                  <ThemedText style={styles.customerOrders}>{customer.orderCount} orders</ThemedText>
+                </View>
               </View>
             </View>
           ))}
         </View>
       ) : (
-        <View style={[styles.emptyCard, { backgroundColor: theme.backgroundDefault }]}>
-          <ThemedText type="small" style={{ color: theme.textSecondary }}>
-            No customer data available
-          </ThemedText>
+        <View style={[styles.emptyCard, Shadows.level1]}>
+          <ThemedText style={styles.emptyText}>No customer data available</ThemedText>
         </View>
       )}
     </ScreenScrollView>
@@ -232,19 +217,36 @@ export default function AnalyticsScreen() {
 const styles = StyleSheet.create({
   filterContainer: {
     marginBottom: Spacing.lg,
-    marginHorizontal: -Spacing.xl,
   },
   filterContent: {
-    paddingHorizontal: Spacing.xl,
-    gap: Spacing.sm,
+    paddingRight: Spacing.lg,
   },
   filterChip: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
+    borderRadius: 20,
+  },
+  filterChipInactive: {
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
+    borderColor: "#E5E5EA",
+  },
+  filterTextActive: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  filterTextInactive: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#8E8E93",
   },
   sectionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#8E8E93",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
     marginBottom: Spacing.md,
     marginTop: Spacing.lg,
   },
@@ -257,81 +259,114 @@ const styles = StyleSheet.create({
     width: "48%",
     flexGrow: 1,
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: 16,
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   kpiIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
+    marginBottom: Spacing.xs,
+  },
+  kpiValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  kpiLabel: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
   },
   statusCard: {
-    borderRadius: BorderRadius.md,
-    overflow: "hidden",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: Spacing.lg,
   },
   statusRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: Spacing.lg,
+    paddingVertical: Spacing.sm,
   },
   statusItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  statusLabel: {
+    fontSize: 16,
+    color: "#1C1C1E",
+  },
+  statusCount: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1C1C1E",
   },
   divider: {
     height: 1,
-    marginHorizontal: Spacing.lg,
+    backgroundColor: "#F2F2F7",
   },
   balanceCard: {
-    padding: Spacing["2xl"],
-    borderRadius: BorderRadius.md,
+    padding: Spacing.xl,
+    borderRadius: 16,
     alignItems: "center",
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
-  balanceIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
+  balanceAmount: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  balanceLabel: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
   },
   customersCard: {
-    borderRadius: BorderRadius.md,
-    overflow: "hidden",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   customerRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: Spacing.lg,
+    paddingVertical: Spacing.sm,
     gap: Spacing.md,
   },
   customerRank: {
-    width: 24,
-  },
-  customerAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.full,
+    width: 28,
     alignItems: "center",
-    justifyContent: "center",
+  },
+  rankText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#8E8E93",
   },
   customerInfo: {
     flex: 1,
-    gap: Spacing.xs,
+    gap: 2,
+  },
+  customerName: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1C1C1E",
+  },
+  customerOrders: {
+    fontSize: 13,
+    color: "#8E8E93",
   },
   emptyCard: {
-    padding: Spacing["2xl"],
-    borderRadius: BorderRadius.md,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: Spacing.xl,
     alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#8E8E93",
   },
 });

@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, TextInput, Pressable, Alert } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, Shadows } from "@/constants/theme";
 import { EmployeesStackParamList } from "@/navigation/EmployeesStackNavigator";
 import { useData } from "@/contexts/DataContext";
 import { Employee } from "@/types";
 
-const ROLES: { key: Employee["role"]; label: string }[] = [
-  { key: "tailor", label: "Tailor" },
-  { key: "manager", label: "Manager" },
-  { key: "admin", label: "Admin" },
+const ROLES: { key: Employee["role"]; label: string; icon: keyof typeof Feather.glyphMap; colors: [string, string] }[] = [
+  { key: "tailor", label: "Tailor", icon: "scissors", colors: ["#F2994A", "#F2C94C"] },
+  { key: "manager", label: "Manager", icon: "user-check", colors: ["#4FACFE", "#00F2FE"] },
+  { key: "admin", label: "Admin", icon: "shield", colors: ["#667EEA", "#764BA2"] },
 ];
 
 export default function AddEmployeeScreen() {
-  const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<EmployeesStackParamList, "AddEmployee">>();
   const { getEmployees, addEmployee, updateEmployee } = useData();
@@ -92,39 +91,37 @@ export default function AddEmployeeScreen() {
 
   return (
     <ScreenKeyboardAwareScrollView>
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Basic Information
-      </ThemedText>
-      <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText style={styles.sectionTitle}>Basic Information</ThemedText>
+      <View style={[styles.card, Shadows.level1]}>
         <View style={styles.inputRow}>
-          <ThemedText type="body">Name *</ThemedText>
+          <ThemedText style={styles.label}>Name *</ThemedText>
           <TextInput
-            style={[styles.input, { color: theme.text }]}
+            style={styles.input}
             placeholder="Enter employee name"
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor="#8E8E93"
             value={name}
             onChangeText={setName}
           />
         </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.divider} />
         <View style={styles.inputRow}>
-          <ThemedText type="body">Phone *</ThemedText>
+          <ThemedText style={styles.label}>Phone *</ThemedText>
           <TextInput
-            style={[styles.input, { color: theme.text }]}
+            style={styles.input}
             placeholder="Enter phone number"
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor="#8E8E93"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
           />
         </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.divider} />
         <View style={styles.inputRow}>
-          <ThemedText type="body">Email</ThemedText>
+          <ThemedText style={styles.label}>Email</ThemedText>
           <TextInput
-            style={[styles.input, { color: theme.text }]}
+            style={styles.input}
             placeholder="Enter email address"
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor="#8E8E93"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -133,48 +130,50 @@ export default function AddEmployeeScreen() {
         </View>
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Role
-      </ThemedText>
+      <ThemedText style={styles.sectionTitle}>Role</ThemedText>
       <View style={styles.roleContainer}>
         {ROLES.map((r) => (
           <Pressable
             key={r.key}
-            style={[
-              styles.roleOption,
-              {
-                backgroundColor: role === r.key ? theme.primary : theme.backgroundDefault,
-                borderColor: role === r.key ? theme.primary : theme.border,
-              },
-            ]}
+            style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.8 : 1 }]}
             onPress={() => setRole(r.key)}
           >
-            <Feather
-              name={r.key === "admin" ? "shield" : r.key === "manager" ? "user-check" : "scissors"}
-              size={20}
-              color={role === r.key ? "#FFFFFF" : theme.text}
-            />
-            <ThemedText
-              type="body"
-              style={{ color: role === r.key ? "#FFFFFF" : theme.text }}
-            >
-              {r.label}
-            </ThemedText>
+            {role === r.key ? (
+              <LinearGradient
+                colors={r.colors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.roleOption, Shadows.level1]}
+              >
+                <Feather name={r.icon} size={24} color="#FFFFFF" />
+                <ThemedText style={styles.roleTextActive}>{r.label}</ThemedText>
+              </LinearGradient>
+            ) : (
+              <View style={[styles.roleOption, styles.roleOptionInactive, Shadows.level1]}>
+                <Feather name={r.icon} size={24} color="#8E8E93" />
+                <ThemedText style={styles.roleTextInactive}>{r.label}</ThemedText>
+              </View>
+            )}
           </Pressable>
         ))}
       </View>
 
       <Pressable
-        style={({ pressed }) => [
-          styles.saveButton,
-          { backgroundColor: theme.primary, opacity: pressed || loading ? 0.8 : 1 },
-        ]}
+        style={({ pressed }) => [{ opacity: pressed || loading ? 0.8 : 1, marginTop: Spacing.xl, marginBottom: Spacing.xl }]}
         onPress={handleSave}
         disabled={loading}
       >
-        <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-          {loading ? "Saving..." : isEditing ? "Update Employee" : "Add Employee"}
-        </ThemedText>
+        <LinearGradient
+          colors={["#0BA360", "#3CBA92"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.saveButton}
+        >
+          <Feather name={isEditing ? "check" : "user-plus"} size={20} color="#FFFFFF" />
+          <ThemedText style={styles.saveText}>
+            {loading ? "Saving..." : isEditing ? "Update Employee" : "Add Employee"}
+          </ThemedText>
+        </LinearGradient>
       </Pressable>
     </ScreenKeyboardAwareScrollView>
   );
@@ -182,23 +181,36 @@ export default function AddEmployeeScreen() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    marginBottom: Spacing.md,
-    marginTop: Spacing.lg,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#8E8E93",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.xl,
+    marginLeft: 4,
   },
-  inputGroup: {
-    borderRadius: BorderRadius.md,
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     overflow: "hidden",
   },
   inputRow: {
     padding: Spacing.lg,
     gap: Spacing.sm,
   },
+  label: {
+    fontSize: 13,
+    color: "#8E8E93",
+  },
   input: {
-    fontSize: 16,
+    fontSize: 17,
+    color: "#1C1C1E",
     padding: 0,
   },
   divider: {
     height: 1,
+    backgroundColor: "#F2F2F7",
     marginHorizontal: Spacing.lg,
   },
   roleContainer: {
@@ -206,19 +218,35 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   roleOption: {
-    flex: 1,
+    padding: Spacing.lg,
+    borderRadius: 16,
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  roleOptionInactive: {
+    backgroundColor: "#FFFFFF",
+  },
+  roleTextActive: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  roleTextInactive: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#8E8E93",
+  },
+  saveButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
+    borderRadius: 12,
     gap: Spacing.sm,
   },
-  saveButton: {
-    marginTop: Spacing["2xl"],
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    alignItems: "center",
+  saveText: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

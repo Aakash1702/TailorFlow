@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, TextInput, Pressable, Alert } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, Shadows } from "@/constants/theme";
 import { CustomersStackParamList } from "@/navigation/CustomersStackNavigator";
 import { useData } from "@/contexts/DataContext";
 import { Customer, Measurements } from "@/types";
 
 export default function AddCustomerScreen() {
-  const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProp<CustomersStackParamList, "AddCustomer">>();
   const { getCustomers, addCustomer, updateCustomer } = useData();
@@ -115,52 +114,50 @@ export default function AddCustomerScreen() {
 
   return (
     <ScreenKeyboardAwareScrollView>
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Basic Information
-      </ThemedText>
-      <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText style={styles.sectionTitle}>Basic Information</ThemedText>
+      <View style={[styles.card, Shadows.level1]}>
         <View style={styles.inputRow}>
-          <ThemedText type="body">Name *</ThemedText>
+          <ThemedText style={styles.label}>Name *</ThemedText>
           <TextInput
-            style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+            style={styles.input}
             placeholder="Enter customer name"
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor="#8E8E93"
             value={name}
             onChangeText={setName}
           />
         </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.divider} />
         <View style={styles.inputRow}>
-          <ThemedText type="body">Phone *</ThemedText>
+          <ThemedText style={styles.label}>Phone *</ThemedText>
           <TextInput
-            style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+            style={styles.input}
             placeholder="Enter phone number"
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor="#8E8E93"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
           />
         </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.divider} />
         <View style={styles.inputRow}>
-          <ThemedText type="body">Email</ThemedText>
+          <ThemedText style={styles.label}>Email</ThemedText>
           <TextInput
-            style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+            style={styles.input}
             placeholder="Enter email address"
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor="#8E8E93"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
           />
         </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.divider} />
         <View style={styles.inputRow}>
-          <ThemedText type="body">Address</ThemedText>
+          <ThemedText style={styles.label}>Address</ThemedText>
           <TextInput
-            style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+            style={styles.input}
             placeholder="Enter address"
-            placeholderTextColor={theme.textSecondary}
+            placeholderTextColor="#8E8E93"
             value={address}
             onChangeText={setAddress}
             multiline
@@ -168,38 +165,32 @@ export default function AddCustomerScreen() {
         </View>
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Measurements (inches)
-      </ThemedText>
-      <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText style={styles.sectionTitle}>Measurements (inches)</ThemedText>
+      <View style={[styles.card, Shadows.level1]}>
         {measurementFields.map((field, index) => (
-          <React.Fragment key={field.key}>
+          <View key={field.key}>
+            {index > 0 && <View style={styles.divider} />}
             <View style={styles.measurementRow}>
-              <ThemedText type="body">{field.label}</ThemedText>
+              <ThemedText style={styles.measurementLabel}>{field.label}</ThemedText>
               <TextInput
-                style={[styles.measurementInput, { color: theme.text, borderColor: theme.border }]}
+                style={styles.measurementInput}
                 placeholder="0"
-                placeholderTextColor={theme.textSecondary}
+                placeholderTextColor="#C7C7CC"
                 value={measurements[field.key]?.toString() || ""}
-                onChangeText={(v) => updateMeasurement(field.key, v)}
+                onChangeText={(value) => updateMeasurement(field.key, value)}
                 keyboardType="decimal-pad"
               />
             </View>
-            {index < measurementFields.length - 1 && (
-              <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            )}
-          </React.Fragment>
+          </View>
         ))}
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Notes
-      </ThemedText>
-      <View style={[styles.inputGroup, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText style={styles.sectionTitle}>Notes</ThemedText>
+      <View style={[styles.card, Shadows.level1]}>
         <TextInput
-          style={[styles.notesInput, { color: theme.text }]}
+          style={styles.notesInput}
           placeholder="Add any notes about this customer..."
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor="#8E8E93"
           value={notes}
           onChangeText={setNotes}
           multiline
@@ -209,16 +200,21 @@ export default function AddCustomerScreen() {
       </View>
 
       <Pressable
-        style={({ pressed }) => [
-          styles.saveButton,
-          { backgroundColor: theme.primary, opacity: pressed || loading ? 0.8 : 1 },
-        ]}
+        style={({ pressed }) => [{ opacity: pressed || loading ? 0.8 : 1, marginTop: Spacing.xl, marginBottom: Spacing.xl }]}
         onPress={handleSave}
         disabled={loading}
       >
-        <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-          {loading ? "Saving..." : isEditing ? "Update Customer" : "Add Customer"}
-        </ThemedText>
+        <LinearGradient
+          colors={["#FF758C", "#FF7EB3"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.saveButton}
+        >
+          <Feather name={isEditing ? "check" : "user-plus"} size={20} color="#FFFFFF" />
+          <ThemedText style={styles.saveText}>
+            {loading ? "Saving..." : isEditing ? "Update Customer" : "Add Customer"}
+          </ThemedText>
+        </LinearGradient>
       </Pressable>
     </ScreenKeyboardAwareScrollView>
   );
@@ -226,45 +222,75 @@ export default function AddCustomerScreen() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    marginBottom: Spacing.md,
-    marginTop: Spacing.lg,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#8E8E93",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.xl,
+    marginLeft: 4,
   },
-  inputGroup: {
-    borderRadius: BorderRadius.md,
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     overflow: "hidden",
   },
   inputRow: {
     padding: Spacing.lg,
     gap: Spacing.sm,
   },
+  label: {
+    fontSize: 13,
+    color: "#8E8E93",
+  },
   input: {
-    fontSize: 16,
+    fontSize: 17,
+    color: "#1C1C1E",
     padding: 0,
-  },
-  measurementRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: Spacing.lg,
-  },
-  measurementInput: {
-    fontSize: 16,
-    textAlign: "right",
-    minWidth: 60,
   },
   divider: {
     height: 1,
+    backgroundColor: "#F2F2F7",
     marginHorizontal: Spacing.lg,
+  },
+  measurementRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.lg,
+  },
+  measurementLabel: {
+    fontSize: 16,
+    color: "#1C1C1E",
+  },
+  measurementInput: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#1C1C1E",
+    textAlign: "right",
+    width: 80,
+    padding: Spacing.sm,
+    backgroundColor: "#F2F2F7",
+    borderRadius: 8,
   },
   notesInput: {
     fontSize: 16,
+    color: "#1C1C1E",
     padding: Spacing.lg,
     minHeight: 100,
   },
   saveButton: {
-    marginTop: Spacing["2xl"],
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    padding: Spacing.lg,
+    borderRadius: 12,
+    gap: Spacing.sm,
+  },
+  saveText: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

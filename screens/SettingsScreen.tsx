@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, TextInput, Pressable, Alert, Share, Platform } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/useTheme";
 import { useData } from "@/contexts/DataContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, Shadows } from "@/constants/theme";
 import {
   setUserName,
   setShopName,
@@ -15,8 +15,14 @@ import {
   formatCurrency,
 } from "@/utils/storage";
 
+const STAT_CONFIG = [
+  { title: "Customers", icon: "users" as const, colors: ["#FF758C", "#FF7EB3"] as [string, string] },
+  { title: "Orders", icon: "package" as const, colors: ["#4FACFE", "#00F2FE"] as [string, string] },
+  { title: "Employees", icon: "user-check" as const, colors: ["#0BA360", "#3CBA92"] as [string, string] },
+  { title: "Revenue", icon: "trending-up" as const, colors: ["#11998E", "#38EF7D"] as [string, string] },
+];
+
 export default function SettingsScreen() {
-  const { theme } = useTheme();
   const { getCustomers, getOrders, getEmployees, getPayments, getUserName, getShopName } = useData();
   const { signOut, user, session, profile, shop } = useAuth();
   const [userName, setUserNameState] = useState("");
@@ -132,43 +138,44 @@ export default function SettingsScreen() {
     );
   };
 
+  const statValues = [
+    stats.customers.toString(),
+    stats.orders.toString(),
+    stats.employees.toString(),
+    formatCurrency(stats.revenue),
+  ];
+
   return (
     <ScreenKeyboardAwareScrollView>
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Shop Profile
-      </ThemedText>
-      <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText style={styles.sectionTitle}>Shop Profile</ThemedText>
+      <View style={[styles.card, Shadows.level1]}>
         <View style={styles.inputRow}>
-          <ThemedText type="body">Shop Name</ThemedText>
+          <ThemedText style={styles.label}>Shop Name</ThemedText>
           {isEditing ? (
             <TextInput
-              style={[styles.input, { color: theme.text }]}
+              style={styles.input}
               placeholder="Enter shop name"
-              placeholderTextColor={theme.textSecondary}
+              placeholderTextColor="#8E8E93"
               value={shopName}
               onChangeText={setShopNameState}
             />
           ) : (
-            <ThemedText type="body" style={{ color: theme.textSecondary }}>
-              {shopName || "TailorFlow"}
-            </ThemedText>
+            <ThemedText style={styles.value}>{shopName || "TailorFlow"}</ThemedText>
           )}
         </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.divider} />
         <View style={styles.inputRow}>
-          <ThemedText type="body">Owner Name</ThemedText>
+          <ThemedText style={styles.label}>Owner Name</ThemedText>
           {isEditing ? (
             <TextInput
-              style={[styles.input, { color: theme.text }]}
+              style={styles.input}
               placeholder="Enter your name"
-              placeholderTextColor={theme.textSecondary}
+              placeholderTextColor="#8E8E93"
               value={userName}
               onChangeText={setUserNameState}
             />
           ) : (
-            <ThemedText type="body" style={{ color: theme.textSecondary }}>
-              {userName || "Not set"}
-            </ThemedText>
+            <ThemedText style={styles.value}>{userName || "Not set"}</ThemedText>
           )}
         </View>
       </View>
@@ -178,178 +185,151 @@ export default function SettingsScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.cancelButton,
-              { borderColor: theme.border, opacity: pressed ? 0.8 : 1 },
+              { opacity: pressed ? 0.8 : 1 },
             ]}
             onPress={() => {
               setIsEditing(false);
               loadSettings();
             }}
           >
-            <ThemedText type="body">Cancel</ThemedText>
+            <ThemedText style={styles.cancelText}>Cancel</ThemedText>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [
-              styles.saveButton,
-              { backgroundColor: theme.primary, opacity: pressed || saving ? 0.8 : 1 },
-            ]}
+            style={({ pressed }) => [{ opacity: pressed || saving ? 0.8 : 1 }]}
             onPress={handleSave}
             disabled={saving}
           >
-            <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-              {saving ? "Saving..." : "Save"}
-            </ThemedText>
+            <LinearGradient
+              colors={["#667EEA", "#764BA2"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.saveButton}
+            >
+              <ThemedText style={styles.saveText}>
+                {saving ? "Saving..." : "Save"}
+              </ThemedText>
+            </LinearGradient>
           </Pressable>
         </View>
       ) : (
         <Pressable
-          style={({ pressed }) => [
-            styles.editButton,
-            { backgroundColor: theme.primary, opacity: pressed ? 0.8 : 1 },
-          ]}
+          style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, marginTop: Spacing.lg }]}
           onPress={() => setIsEditing(true)}
         >
-          <Feather name="edit-2" size={18} color="#FFFFFF" />
-          <ThemedText type="body" style={{ color: "#FFFFFF", fontWeight: "600" }}>
-            Edit Profile
-          </ThemedText>
+          <LinearGradient
+            colors={["#667EEA", "#764BA2"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.editButton}
+          >
+            <Feather name="edit-2" size={18} color="#FFFFFF" />
+            <ThemedText style={styles.editText}>Edit Profile</ThemedText>
+          </LinearGradient>
         </Pressable>
       )}
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Data Summary
-      </ThemedText>
+      <ThemedText style={styles.sectionTitle}>Data Summary</ThemedText>
       <View style={styles.statsGrid}>
-        <View style={[styles.statCard, { backgroundColor: theme.backgroundDefault }]}>
-          <Feather name="users" size={20} color={theme.primary} />
-          <ThemedText type="h3" style={{ color: theme.primary }}>
-            {stats.customers}
-          </ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-            Customers
-          </ThemedText>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: theme.backgroundDefault }]}>
-          <Feather name="shopping-bag" size={20} color={theme.info} />
-          <ThemedText type="h3" style={{ color: theme.info }}>
-            {stats.orders}
-          </ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-            Orders
-          </ThemedText>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: theme.backgroundDefault }]}>
-          <Feather name="briefcase" size={20} color={theme.accent} />
-          <ThemedText type="h3" style={{ color: theme.accent }}>
-            {stats.employees}
-          </ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-            Employees
-          </ThemedText>
-        </View>
-        <View style={[styles.statCard, { backgroundColor: theme.backgroundDefault }]}>
-          <Feather name="trending-up" size={20} color={theme.completed} />
-          <ThemedText type="h3" style={{ color: theme.completed }}>
-            {formatCurrency(stats.revenue)}
-          </ThemedText>
-          <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-            Revenue
-          </ThemedText>
-        </View>
+        {STAT_CONFIG.map((stat, index) => (
+          <LinearGradient
+            key={stat.title}
+            colors={stat.colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.statCard, Shadows.level1]}
+          >
+            <Feather name={stat.icon} size={20} color="#FFFFFF" />
+            <ThemedText style={styles.statValue}>{statValues[index]}</ThemedText>
+            <ThemedText style={styles.statLabel}>{stat.title}</ThemedText>
+          </LinearGradient>
+        ))}
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Data Management
-      </ThemedText>
-      <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText style={styles.sectionTitle}>Data Management</ThemedText>
+      <View style={[styles.card, Shadows.level1]}>
         <Pressable
           style={({ pressed }) => [styles.actionRow, { opacity: pressed ? 0.8 : 1 }]}
           onPress={handleExportData}
         >
-          <View style={[styles.actionIcon, { backgroundColor: theme.info + "15" }]}>
-            <Feather name="download" size={18} color={theme.info} />
-          </View>
+          <LinearGradient
+            colors={["#4FACFE", "#00F2FE"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.actionIcon}
+          >
+            <Feather name="download" size={18} color="#FFFFFF" />
+          </LinearGradient>
           <View style={styles.actionContent}>
-            <ThemedText type="body">Export Data</ThemedText>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              Download all data as JSON backup
-            </ThemedText>
+            <ThemedText style={styles.actionTitle}>Export Data</ThemedText>
+            <ThemedText style={styles.actionSubtitle}>Download all data as JSON backup</ThemedText>
           </View>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          <Feather name="chevron-right" size={20} color="#C7C7CC" />
         </Pressable>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.divider} />
         <Pressable
           style={({ pressed }) => [styles.actionRow, { opacity: pressed ? 0.8 : 1 }]}
           onPress={handleClearData}
         >
-          <View style={[styles.actionIcon, { backgroundColor: theme.error + "15" }]}>
-            <Feather name="trash-2" size={18} color={theme.error} />
-          </View>
+          <LinearGradient
+            colors={["#FF758C", "#FF7EB3"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.actionIcon}
+          >
+            <Feather name="trash-2" size={18} color="#FFFFFF" />
+          </LinearGradient>
           <View style={styles.actionContent}>
-            <ThemedText type="body" style={{ color: theme.error }}>
-              Clear All Data
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-              Delete all customers, orders, and payments
-            </ThemedText>
+            <ThemedText style={[styles.actionTitle, { color: "#DC2626" }]}>Clear All Data</ThemedText>
+            <ThemedText style={styles.actionSubtitle}>Delete all customers, orders, and payments</ThemedText>
           </View>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          <Feather name="chevron-right" size={20} color="#C7C7CC" />
         </Pressable>
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        About
-      </ThemedText>
-      <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText style={styles.sectionTitle}>About</ThemedText>
+      <View style={[styles.card, Shadows.level1]}>
         <View style={styles.aboutRow}>
-          <ThemedText type="body">Version</ThemedText>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
-            1.0.0
-          </ThemedText>
+          <ThemedText style={styles.aboutLabel}>Version</ThemedText>
+          <ThemedText style={styles.aboutValue}>1.0.0</ThemedText>
         </View>
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        <View style={styles.divider} />
         <View style={styles.aboutRow}>
-          <ThemedText type="body">Platform</ThemedText>
-          <ThemedText type="body" style={{ color: theme.textSecondary }}>
+          <ThemedText style={styles.aboutLabel}>Platform</ThemedText>
+          <ThemedText style={styles.aboutValue}>
             {Platform.OS === "web" ? "Web" : Platform.OS === "ios" ? "iOS" : "Android"}
           </ThemedText>
         </View>
       </View>
 
-      <ThemedText type="h4" style={styles.sectionTitle}>
-        Account
-      </ThemedText>
-      <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+      <ThemedText style={styles.sectionTitle}>Account</ThemedText>
+      <View style={[styles.card, Shadows.level1]}>
         {session?.user?.email || user?.email || profile?.email ? (
           <>
             <View style={styles.aboutRow}>
-              <ThemedText type="body">Signed in as</ThemedText>
-              <ThemedText type="body" style={{ color: theme.textSecondary, flex: 1, textAlign: "right" }} numberOfLines={1}>
+              <ThemedText style={styles.aboutLabel}>Signed in as</ThemedText>
+              <ThemedText style={[styles.aboutValue, { flex: 1, textAlign: "right" }]} numberOfLines={1}>
                 {session?.user?.email || user?.email || profile?.email}
               </ThemedText>
             </View>
             {profile?.full_name ? (
               <>
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                <View style={styles.divider} />
                 <View style={styles.aboutRow}>
-                  <ThemedText type="body">Name</ThemedText>
-                  <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                    {profile.full_name}
-                  </ThemedText>
+                  <ThemedText style={styles.aboutLabel}>Name</ThemedText>
+                  <ThemedText style={styles.aboutValue}>{profile.full_name}</ThemedText>
                 </View>
               </>
             ) : null}
             {shop?.name ? (
               <>
-                <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                <View style={styles.divider} />
                 <View style={styles.aboutRow}>
-                  <ThemedText type="body">Shop</ThemedText>
-                  <ThemedText type="body" style={{ color: theme.textSecondary }}>
-                    {shop.name}
-                  </ThemedText>
+                  <ThemedText style={styles.aboutLabel}>Shop</ThemedText>
+                  <ThemedText style={styles.aboutValue}>{shop.name}</ThemedText>
                 </View>
               </>
             ) : null}
-            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <View style={styles.divider} />
             <Pressable
               style={({ pressed }) => [styles.actionRow, { opacity: pressed ? 0.8 : 1 }]}
               onPress={() => {
@@ -369,36 +349,31 @@ export default function SettingsScreen() {
                 );
               }}
             >
-              <View style={[styles.actionIcon, { backgroundColor: theme.error + "15" }]}>
-                <Feather name="log-out" size={18} color={theme.error} />
-              </View>
+              <LinearGradient
+                colors={["#FF758C", "#FF7EB3"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.actionIcon}
+              >
+                <Feather name="log-out" size={18} color="#FFFFFF" />
+              </LinearGradient>
               <View style={styles.actionContent}>
-                <ThemedText type="body" style={{ color: theme.error }}>
-                  Sign Out
-                </ThemedText>
-                <ThemedText type="caption" style={{ color: theme.textSecondary }}>
-                  Sign out of your account
-                </ThemedText>
+                <ThemedText style={[styles.actionTitle, { color: "#DC2626" }]}>Sign Out</ThemedText>
+                <ThemedText style={styles.actionSubtitle}>Sign out of your account</ThemedText>
               </View>
-              <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+              <Feather name="chevron-right" size={20} color="#C7C7CC" />
             </Pressable>
           </>
         ) : (
           <View style={styles.aboutRow}>
-            <ThemedText type="body" style={{ color: theme.textSecondary }}>
-              Not signed in
-            </ThemedText>
+            <ThemedText style={styles.aboutValue}>Not signed in</ThemedText>
           </View>
         )}
       </View>
 
       <View style={styles.footer}>
-        <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center" }}>
-          TailorFlow - Tailoring Business Management
-        </ThemedText>
-        <ThemedText type="caption" style={{ color: theme.textSecondary, textAlign: "center" }}>
-          Crafted with precision for tailoring professionals
-        </ThemedText>
+        <ThemedText style={styles.footerText}>TailorFlow - Tailoring Business Management</ThemedText>
+        <ThemedText style={styles.footerSubtext}>Crafted with precision for tailoring professionals</ThemedText>
       </View>
     </ScreenKeyboardAwareScrollView>
   );
@@ -406,28 +381,40 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    marginBottom: Spacing.md,
-    marginTop: Spacing.lg,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#8E8E93",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.xl,
+    marginLeft: 4,
   },
   card: {
-    borderRadius: BorderRadius.md,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     overflow: "hidden",
   },
   inputRow: {
     padding: Spacing.lg,
     gap: Spacing.sm,
   },
-  input: {
-    fontSize: 16,
-    padding: 0,
+  label: {
+    fontSize: 13,
+    color: "#8E8E93",
   },
-  aboutRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: Spacing.lg,
+  input: {
+    fontSize: 17,
+    padding: 0,
+    color: "#1C1C1E",
+  },
+  value: {
+    fontSize: 17,
+    color: "#1C1C1E",
   },
   divider: {
     height: 1,
+    backgroundColor: "#F2F2F7",
     marginHorizontal: Spacing.lg,
   },
   editActions: {
@@ -438,24 +425,41 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
+    borderColor: "#E5E5EA",
     alignItems: "center",
+  },
+  cancelText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1C1C1E",
   },
   saveButton: {
     flex: 1,
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: 12,
     alignItems: "center",
+    minWidth: 120,
+  },
+  saveText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   editButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: 12,
     gap: Spacing.sm,
-    marginTop: Spacing.lg,
+  },
+  editText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
   statsGrid: {
     flexDirection: "row",
@@ -466,9 +470,18 @@ const styles = StyleSheet.create({
     width: "47%",
     flexGrow: 1,
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: 16,
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
   },
   actionRow: {
     flexDirection: "row",
@@ -477,19 +490,52 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   actionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.sm,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   actionContent: {
     flex: 1,
-    gap: Spacing.xs,
+    gap: 2,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1C1C1E",
+  },
+  actionSubtitle: {
+    fontSize: 13,
+    color: "#8E8E93",
+  },
+  aboutRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: Spacing.lg,
+  },
+  aboutLabel: {
+    fontSize: 16,
+    color: "#1C1C1E",
+  },
+  aboutValue: {
+    fontSize: 16,
+    color: "#8E8E93",
   },
   footer: {
     marginTop: Spacing["3xl"],
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
     gap: Spacing.xs,
+    alignItems: "center",
+  },
+  footerText: {
+    fontSize: 13,
+    color: "#8E8E93",
+    textAlign: "center",
+  },
+  footerSubtext: {
+    fontSize: 13,
+    color: "#C7C7CC",
+    textAlign: "center",
   },
 });
