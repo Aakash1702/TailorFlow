@@ -40,7 +40,11 @@ Preferred communication style: Simple, everyday language.
 - Theme-based design with light/dark mode support
 - Centralized constants for spacing, typography, border radius, and colors
 - Platform-specific adaptations (iOS blur effects, Android edge-to-edge)
-- Premium color palette: Rich Black (#1A1A1A) primary, Metallic Gold (#D4AF37) accent
+- **Minimal color palette:** Only 3 colors used throughout the app:
+  - Primary: Rich Black (#1A1A1A) - buttons, text, icons, status indicators
+  - Accent: Metallic Gold (#D4AF37) - used sparingly for highlights, completed status
+  - Backgrounds: White (#FFFFFF), Light Gray (#F5F5F5), borders (#E5E5E5)
+- No bright semantic colors (no blue/green/orange/red) - intentionally minimal
 - Refined elevation system with subtle shadows (level1, level2, level3)
 
 ### Data Storage

@@ -101,7 +101,7 @@ export default function CustomerDetailScreen() {
           </ThemedText>
         </View>
         <View style={[styles.statItem, { backgroundColor: theme.backgroundDefault }]}>
-          <ThemedText type="h3" style={{ color: customer.outstandingBalance > 0 ? theme.error : theme.completed }}>
+          <ThemedText type="h3" style={{ color: customer.outstandingBalance > 0 ? theme.text : theme.accent }}>
             {formatCurrency(customer.outstandingBalance)}
           </ThemedText>
           <ThemedText type="caption" style={{ color: theme.textSecondary }}>
@@ -167,8 +167,8 @@ export default function CustomerDetailScreen() {
                   {formatDate(order.createdAt)}
                 </ThemedText>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: theme[order.status] + "15" }]}>
-                <ThemedText type="caption" style={{ color: theme[order.status], textTransform: "capitalize" }}>
+              <View style={[styles.statusBadge, { backgroundColor: order.status === "delivered" ? theme.accent + "15" : theme.backgroundSecondary }]}>
+                <ThemedText type="caption" style={{ color: order.status === "delivered" ? theme.accent : theme.text, textTransform: "capitalize" }}>
                   {order.status === "inProgress" ? "In Progress" : order.status}
                 </ThemedText>
               </View>
@@ -210,12 +210,12 @@ export default function CustomerDetailScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.deleteButton,
-            { borderColor: theme.error, opacity: pressed ? 0.9 : 1 },
+            { borderColor: theme.border, opacity: pressed ? 0.9 : 1 },
           ]}
           onPress={handleDelete}
         >
-          <Feather name="trash-2" size={18} color={theme.error} />
-          <ThemedText type="body" style={{ color: theme.error }}>
+          <Feather name="trash-2" size={18} color={theme.textSecondary} />
+          <ThemedText type="body" style={{ color: theme.textSecondary }}>
             Delete
           </ThemedText>
         </Pressable>

@@ -478,7 +478,7 @@ export default function AddOrderScreen() {
                   ) : null}
                 </View>
                 <Pressable onPress={() => removeItem(item.id)} hitSlop={8}>
-                  <Feather name="trash-2" size={18} color={theme.error} />
+                  <Feather name="trash-2" size={18} color={theme.textSecondary} />
                 </Pressable>
               </View>
               <View style={styles.itemBreakdown}>

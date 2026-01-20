@@ -68,11 +68,11 @@ export default function PatternViewerScreen() {
             </ThemedText>
           </Pressable>
           <Pressable
-            style={[styles.actionButton, { backgroundColor: withOpacity(theme.success, 0.12) }]}
+            style={[styles.actionButton, { backgroundColor: withOpacity(theme.accent, 0.12) }]}
             onPress={handlePrint}
           >
-            <Feather name="printer" size={18} color={theme.success} />
-            <ThemedText type="small" style={{ color: theme.success, marginLeft: Spacing.xs }}>
+            <Feather name="printer" size={18} color={theme.accent} />
+            <ThemedText type="small" style={{ color: theme.accent, marginLeft: Spacing.xs }}>
               Print
             </ThemedText>
           </Pressable>

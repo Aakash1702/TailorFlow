@@ -145,8 +145,8 @@ export default function PatternTemplatesScreen() {
               </ThemedText>
             ) : null}
             <View style={styles.tagContainer}>
-              <View style={[styles.tag, { backgroundColor: withOpacity(theme.success, 0.12) }]}>
-                <ThemedText type="small" style={{ color: theme.success }}>
+              <View style={[styles.tag, { backgroundColor: withOpacity(theme.primary, 0.12) }]}>
+                <ThemedText type="small" style={{ color: theme.primary }}>
                   {template.measurementFields.length} measurements
                 </ThemedText>
               </View>

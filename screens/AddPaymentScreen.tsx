@@ -138,7 +138,7 @@ export default function AddPaymentScreen() {
                     </ThemedText>
                   </View>
                   <View style={styles.orderOptionAmount}>
-                    <ThemedText type="small" style={{ color: theme.error }}>
+                    <ThemedText type="small" style={{ color: theme.text, fontWeight: "600" }}>
                       {formatCurrency(order.amount - order.paidAmount)} due
                     </ThemedText>
                   </View>

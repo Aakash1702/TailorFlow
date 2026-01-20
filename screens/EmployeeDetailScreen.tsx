@@ -68,7 +68,7 @@ export default function EmployeeDetailScreen() {
       case "admin":
         return theme.primary;
       case "manager":
-        return theme.info;
+        return theme.primary;
       case "tailor":
         return theme.accent;
       default:
@@ -111,8 +111,8 @@ export default function EmployeeDetailScreen() {
           </ThemedText>
         </View>
         <View style={styles.statusRow}>
-          <View style={[styles.statusDot, { backgroundColor: employee.isActive ? theme.completed : theme.error }]} />
-          <ThemedText type="body" style={{ color: employee.isActive ? theme.completed : theme.error }}>
+          <View style={[styles.statusDot, { backgroundColor: employee.isActive ? theme.accent : theme.textSecondary }]} />
+          <ThemedText type="body" style={{ color: employee.isActive ? theme.accent : theme.textSecondary }}>
             {employee.isActive ? "Active" : "Inactive"}
           </ThemedText>
         </View>
@@ -128,7 +128,7 @@ export default function EmployeeDetailScreen() {
           </ThemedText>
         </View>
         <View style={[styles.statItem, { backgroundColor: theme.backgroundDefault }]}>
-          <ThemedText type="h3" style={{ color: theme.completed }}>
+          <ThemedText type="h3" style={{ color: theme.accent }}>
             {completedOrders}
           </ThemedText>
           <ThemedText type="caption" style={{ color: theme.textSecondary }}>
@@ -185,10 +185,10 @@ export default function EmployeeDetailScreen() {
                   {order.customerName}
                 </ThemedText>
               </View>
-              <View style={[styles.orderStatusBadge, { backgroundColor: theme[order.status] + "15" }]}>
+              <View style={[styles.orderStatusBadge, { backgroundColor: order.status === "delivered" ? theme.accent + "15" : theme.backgroundSecondary }]}>
                 <ThemedText
                   type="caption"
-                  style={{ color: theme[order.status], textTransform: "capitalize" }}
+                  style={{ color: order.status === "delivered" ? theme.accent : theme.text, textTransform: "capitalize" }}
                 >
                   {order.status === "inProgress" ? "In Progress" : order.status}
                 </ThemedText>
@@ -209,7 +209,7 @@ export default function EmployeeDetailScreen() {
           style={({ pressed }) => [
             styles.toggleButton,
             {
-              backgroundColor: employee.isActive ? theme.error + "15" : theme.completed + "15",
+              backgroundColor: employee.isActive ? theme.backgroundSecondary : theme.accent + "15",
               opacity: pressed ? 0.9 : 1,
             },
           ]}
@@ -218,11 +218,11 @@ export default function EmployeeDetailScreen() {
           <Feather
             name={employee.isActive ? "user-x" : "user-check"}
             size={18}
-            color={employee.isActive ? theme.error : theme.completed}
+            color={employee.isActive ? theme.textSecondary : theme.accent}
           />
           <ThemedText
             type="body"
-            style={{ color: employee.isActive ? theme.error : theme.completed }}
+            style={{ color: employee.isActive ? theme.textSecondary : theme.accent }}
           >
             {employee.isActive ? "Deactivate" : "Activate"}
           </ThemedText>
@@ -245,11 +245,11 @@ export default function EmployeeDetailScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.deleteButton,
-            { borderColor: theme.error, opacity: pressed ? 0.9 : 1 },
+            { borderColor: theme.border, opacity: pressed ? 0.9 : 1 },
           ]}
           onPress={handleDelete}
         >
-          <Feather name="trash-2" size={18} color={theme.error} />
+          <Feather name="trash-2" size={18} color={theme.textSecondary} />
         </Pressable>
       </View>
     </ScreenScrollView>

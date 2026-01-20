@@ -154,13 +154,13 @@ export default function OrderDetailScreen() {
               </ThemedText>
             </View>
             <Pressable 
-              style={[styles.unassignButton, { backgroundColor: theme.error + "15" }]}
+              style={[styles.unassignButton, { backgroundColor: theme.backgroundSecondary }]}
               onPress={(e) => {
                 e.stopPropagation();
                 handleUnassignEmployee();
               }}
             >
-              <Feather name="x" size={16} color={theme.error} />
+              <Feather name="x" size={16} color={theme.textSecondary} />
             </Pressable>
           </View>
         ) : (
@@ -181,15 +181,17 @@ export default function OrderDetailScreen() {
           {STATUS_STEPS.map((step, index) => {
             const isActive = index <= statusIndex;
             const isCurrent = index === statusIndex;
+            const isDelivered = step.key === "delivered";
+            const stepColor = isDelivered && isActive ? theme.accent : theme.primary;
             return (
               <View key={step.key} style={styles.statusStep}>
                 <Pressable
                   style={[
                     styles.statusIcon,
                     {
-                      backgroundColor: isActive ? theme[step.key] : theme.backgroundSecondary,
-                      borderWidth: isCurrent ? 3 : 0,
-                      borderColor: theme[step.key],
+                      backgroundColor: isActive ? stepColor : theme.backgroundSecondary,
+                      borderWidth: isCurrent ? 2 : 0,
+                      borderColor: stepColor,
                     },
                   ]}
                   onPress={() => handleStatusUpdate(step.key)}
@@ -213,7 +215,7 @@ export default function OrderDetailScreen() {
                   <View
                     style={[
                       styles.statusLine,
-                      { backgroundColor: index < statusIndex ? theme.completed : theme.border },
+                      { backgroundColor: index < statusIndex ? theme.primary : theme.border },
                     ]}
                   />
                 ) : null}
@@ -236,7 +238,7 @@ export default function OrderDetailScreen() {
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
         <View style={styles.paymentRow}>
           <ThemedText type="body">Paid Amount</ThemedText>
-          <ThemedText type="body" style={{ color: theme.completed }}>
+          <ThemedText type="body" style={{ color: theme.accent }}>
             {formatCurrency(order.paidAmount)}
           </ThemedText>
         </View>
@@ -247,7 +249,7 @@ export default function OrderDetailScreen() {
           </ThemedText>
           <ThemedText
             type="body"
-            style={{ fontWeight: "600", color: isPaid ? theme.completed : theme.error }}
+            style={{ fontWeight: "600", color: isPaid ? theme.accent : theme.text }}
           >
             {isPaid ? "Paid in Full" : formatCurrency(order.amount - order.paidAmount)}
           </ThemedText>
@@ -325,10 +327,8 @@ export default function OrderDetailScreen() {
           <ThemedText
             type="small"
             style={{
-              color:
-                new Date(order.dueDate) < new Date() && order.status !== "delivered"
-                  ? theme.error
-                  : theme.textSecondary,
+              color: theme.textSecondary,
+              fontWeight: new Date(order.dueDate) < new Date() && order.status !== "delivered" ? "600" : "400",
             }}
           >
             {formatDate(order.dueDate)}
@@ -339,7 +339,7 @@ export default function OrderDetailScreen() {
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <View style={styles.timelineRow}>
               <ThemedText type="body">Completed</ThemedText>
-              <ThemedText type="small" style={{ color: theme.completed }}>
+              <ThemedText type="small" style={{ color: theme.text }}>
                 {formatDate(order.completedAt)}
               </ThemedText>
             </View>
@@ -350,7 +350,7 @@ export default function OrderDetailScreen() {
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <View style={styles.timelineRow}>
               <ThemedText type="body">Delivered</ThemedText>
-              <ThemedText type="small" style={{ color: theme.delivered }}>
+              <ThemedText type="small" style={{ color: theme.accent }}>
                 {formatDate(order.deliveredAt)}
               </ThemedText>
             </View>
@@ -385,11 +385,11 @@ export default function OrderDetailScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.deleteButton,
-            { borderColor: theme.error, opacity: pressed ? 0.9 : 1 },
+            { borderColor: theme.border, opacity: pressed ? 0.9 : 1 },
           ]}
           onPress={handleDelete}
         >
-          <Feather name="trash-2" size={18} color={theme.error} />
+          <Feather name="trash-2" size={18} color={theme.textSecondary} />
         </Pressable>
       </View>
 
@@ -441,7 +441,7 @@ export default function OrderDetailScreen() {
                     </ThemedText>
                   </View>
                   {order.assignedEmployeeId === employee.id ? (
-                    <Feather name="check-circle" size={20} color={theme.completed} />
+                    <Feather name="check-circle" size={20} color={theme.accent} />
                   ) : null}
                 </Pressable>
               ))
