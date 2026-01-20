@@ -1,13 +1,6 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle, StyleProp } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  interpolate,
-} from "react-native-reanimated";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
