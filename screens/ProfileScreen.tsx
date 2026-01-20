@@ -22,7 +22,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
   const [password, setPassword] = useState("");
 
   const handleSubmit = () => {
-    console.log("Form submitted:", { name, email, password });
+    // Form submission logic here
   };
 
   const inputStyle = [
