@@ -238,5 +238,21 @@ export const Shadows = {
   },
 };
 
+export const AnimationConfig = {
+  spring: {
+    damping: 15,
+    stiffness: 150,
+    mass: 0.8,
+  },
+  fade: {
+    duration: 200,
+  },
+  press: {
+    scale: 0.97,
+    opacity: 0.9,
+    duration: 120,
+  },
+};
+
 export type ThemeColors = typeof Colors.light;
 export type ThemeType = "light" | "dark";
