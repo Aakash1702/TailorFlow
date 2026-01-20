@@ -1,19 +1,17 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, RefreshControl } from "react-native";
+import { View, StyleSheet, RefreshControl, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import Animated from "react-native-reanimated";
 import { useFocusEffect, useNavigation, NavigatorScreenParams } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { ThemedText } from "@/components/ThemedText";
-import { StatCard } from "@/components/StatCard";
-import { QuickActionTile } from "@/components/QuickActionTile";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ActivityListItem } from "@/components/ActivityItem";
 import { useTheme } from "@/hooks/useTheme";
 import { useAnimatedMount } from "@/hooks/useAnimatedMount";
 import { useData } from "@/contexts/DataContext";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { formatCurrency } from "@/utils/storage";
 import { DashboardStats, ActivityItem } from "@/types";
 
@@ -31,13 +29,6 @@ type RootTabParamList = {
   OrdersTab: undefined;
   EmployeesTab: undefined;
   MoreTab: NavigatorScreenParams<MoreStackParamList> | undefined;
-};
-
-const GRADIENTS = {
-  primary: ["#1A1A1A", "#333333"] as [string, string],
-  primaryLight: ["#333333", "#4A4A4A"] as [string, string],
-  accent: ["#D4AF37", "#E5C76B"] as [string, string],
-  subtle: ["#4A4A4A", "#666666"] as [string, string],
 };
 
 export default function DashboardScreen() {
@@ -107,42 +98,56 @@ export default function DashboardScreen() {
       title: "Active Orders",
       value: stats.activeOrders.toString(),
       icon: "layers" as const,
-      gradientColors: GRADIENTS.primary,
+      highlight: false,
     },
     {
       title: "Completed",
       value: stats.completedToday.toString(),
       icon: "check-circle" as const,
-      gradientColors: GRADIENTS.accent,
+      highlight: true,
     },
     {
       title: "Revenue",
       value: formatCurrency(stats.todayRevenue),
       icon: "trending-up" as const,
-      gradientColors: GRADIENTS.accent,
+      highlight: true,
     },
     {
       title: "Pending",
       value: formatCurrency(stats.pendingPayments),
       icon: "clock" as const,
-      gradientColors: GRADIENTS.primaryLight,
+      highlight: false,
     },
   ];
 
   const quickActions: Array<{
     title: string;
     icon: keyof typeof Feather.glyphMap;
-    gradientColors: [string, string];
     tab: keyof RootTabParamList;
     screen?: keyof MoreStackParamList;
+    highlight?: boolean;
   }> = [
-    { title: "Customers", icon: "users", gradientColors: GRADIENTS.primary, tab: "CustomersTab" },
-    { title: "Orders", icon: "package", gradientColors: GRADIENTS.primaryLight, tab: "OrdersTab" },
-    { title: "Team", icon: "user-check", gradientColors: GRADIENTS.subtle, tab: "EmployeesTab" },
-    { title: "Payments", icon: "credit-card", gradientColors: GRADIENTS.accent, tab: "MoreTab", screen: "Payments" },
-    { title: "Analytics", icon: "pie-chart", gradientColors: GRADIENTS.primary, tab: "MoreTab", screen: "Analytics" },
-    { title: "Settings", icon: "sliders", gradientColors: GRADIENTS.primaryLight, tab: "MoreTab", screen: "Settings" },
+    { title: "Customers", icon: "users", tab: "CustomersTab" },
+    { title: "Orders", icon: "package", tab: "OrdersTab" },
+    { title: "Team", icon: "user-check", tab: "EmployeesTab" },
+    { title: "Payments", icon: "credit-card", tab: "MoreTab", screen: "Payments", highlight: true },
+    { title: "Analytics", icon: "pie-chart", tab: "MoreTab", screen: "Analytics" },
+    { title: "Settings", icon: "sliders", tab: "MoreTab", screen: "Settings" },
   ];
+
+  const handleActionPress = (action: typeof quickActions[0]) => {
+    if (action.tab === "MoreTab" && action.screen) {
+      navigation.navigate("MoreTab", { screen: action.screen });
+    } else if (action.tab === "CustomersTab") {
+      navigation.navigate("CustomersTab");
+    } else if (action.tab === "OrdersTab") {
+      navigation.navigate("OrdersTab");
+    } else if (action.tab === "EmployeesTab") {
+      navigation.navigate("EmployeesTab");
+    } else {
+      navigation.navigate("MoreTab");
+    }
+  };
 
   return (
     <ScreenScrollView
@@ -156,13 +161,31 @@ export default function DashboardScreen() {
     >
       <Animated.View style={[styles.statsGrid, statsAnimatedStyle]}>
         {statCards.map((stat, index) => (
-          <StatCard
+          <View
             key={index}
-            title={stat.title}
-            value={stat.value}
-            icon={stat.icon}
-            gradientColors={stat.gradientColors}
-          />
+            style={[
+              styles.statCard,
+              { backgroundColor: theme.backgroundDefault },
+              Shadows.level1,
+            ]}
+          >
+            <View
+              style={[
+                styles.statIconContainer,
+                { backgroundColor: stat.highlight ? theme.accent + "15" : theme.backgroundSecondary },
+              ]}
+            >
+              <Feather
+                name={stat.icon}
+                size={20}
+                color={stat.highlight ? theme.accent : theme.text}
+              />
+            </View>
+            <ThemedText style={styles.statValue}>{stat.value}</ThemedText>
+            <ThemedText style={[styles.statLabel, { color: theme.textSecondary }]}>
+              {stat.title}
+            </ThemedText>
+          </View>
         ))}
       </Animated.View>
 
@@ -170,25 +193,36 @@ export default function DashboardScreen() {
         <SectionHeader title="Quick Actions" />
         <View style={styles.actionsGrid}>
           {quickActions.map((action, index) => (
-            <QuickActionTile
+            <Pressable
               key={index}
-              title={action.title}
-              icon={action.icon}
-              gradientColors={action.gradientColors}
-              onPress={() => {
-                if (action.tab === "MoreTab" && action.screen) {
-                  navigation.navigate("MoreTab", { screen: action.screen });
-                } else if (action.tab === "CustomersTab") {
-                  navigation.navigate("CustomersTab");
-                } else if (action.tab === "OrdersTab") {
-                  navigation.navigate("OrdersTab");
-                } else if (action.tab === "EmployeesTab") {
-                  navigation.navigate("EmployeesTab");
-                } else {
-                  navigation.navigate("MoreTab");
-                }
-              }}
-            />
+              onPress={() => handleActionPress(action)}
+              style={({ pressed }) => [
+                styles.actionTile,
+                {
+                  backgroundColor: theme.backgroundDefault,
+                  borderColor: action.highlight ? theme.accent : theme.border,
+                  borderWidth: action.highlight ? 1.5 : 1,
+                  opacity: pressed ? 0.9 : 1,
+                  transform: [{ scale: pressed ? 0.98 : 1 }],
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.actionIconContainer,
+                  { backgroundColor: action.highlight ? theme.accent + "15" : theme.backgroundSecondary },
+                ]}
+              >
+                <Feather
+                  name={action.icon}
+                  size={22}
+                  color={action.highlight ? theme.accent : theme.text}
+                />
+              </View>
+              <ThemedText style={[styles.actionTitle, { color: theme.text }]}>
+                {action.title}
+              </ThemedText>
+            </Pressable>
           ))}
         </View>
       </Animated.View>
@@ -196,19 +230,19 @@ export default function DashboardScreen() {
       <Animated.View style={activityAnimatedStyle}>
         <SectionHeader title="Recent Activity" />
         {recentActivity.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconContainer}>
-              <Feather name="inbox" size={32} color="#C7C7CC" />
+          <View style={[styles.emptyState, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={[styles.emptyIconContainer, { backgroundColor: theme.backgroundSecondary }]}>
+              <Feather name="inbox" size={32} color={theme.textSecondary} />
             </View>
-            <ThemedText style={styles.emptyTitle}>
+            <ThemedText style={[styles.emptyTitle, { color: theme.text }]}>
               No recent activity
             </ThemedText>
-            <ThemedText style={styles.emptySubtitle}>
+            <ThemedText style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
               Activity will appear here as you use the app
             </ThemedText>
           </View>
         ) : (
-          <View style={styles.activityList}>
+          <View style={[styles.activityList, { backgroundColor: theme.backgroundDefault }]}>
             {recentActivity.map((activity, index) => (
               <ActivityListItem
                 key={activity.id}
@@ -230,23 +264,70 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     marginBottom: Spacing["2xl"],
   },
+  statCard: {
+    flex: 1,
+    minWidth: "45%",
+    padding: Spacing.lg,
+    borderRadius: 16,
+  },
+  statIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.md,
+  },
+  statValue: {
+    fontSize: 26,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    lineHeight: 32,
+    color: "#1A1A1A",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
+  },
   actionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.md,
     marginBottom: Spacing["2xl"],
   },
+  actionTile: {
+    flex: 1,
+    minWidth: "30%",
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 16,
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  actionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 18,
+  },
   emptyState: {
-    backgroundColor: "#FFFFFF",
     padding: Spacing["2xl"],
-    borderRadius: 20,
+    borderRadius: 16,
     alignItems: "center",
   },
   emptyIconContainer: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#F2F2F7",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.md,
@@ -254,17 +335,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#1C1C1E",
     marginBottom: 4,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: "#8E8E93",
     textAlign: "center",
   },
   activityList: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    borderRadius: 16,
     overflow: "hidden",
   },
 });
