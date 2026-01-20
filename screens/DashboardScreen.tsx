@@ -34,16 +34,10 @@ type RootTabParamList = {
 };
 
 const GRADIENTS = {
-  coral: ["#FF6B6B", "#FF8E53"] as [string, string],
-  emerald: ["#11998E", "#38EF7D"] as [string, string],
-  gold: ["#F2994A", "#F2C94C"] as [string, string],
-  purple: ["#667EEA", "#764BA2"] as [string, string],
-  blue: ["#4FACFE", "#00F2FE"] as [string, string],
-  rose: ["#FF758C", "#FF7EB3"] as [string, string],
-  mint: ["#0BA360", "#3CBA92"] as [string, string],
-  sunset: ["#FA709A", "#FEE140"] as [string, string],
-  ocean: ["#2193B0", "#6DD5ED"] as [string, string],
-  lavender: ["#A18CD1", "#FBC2EB"] as [string, string],
+  primary: ["#1A1A1A", "#333333"] as [string, string],
+  primaryLight: ["#333333", "#4A4A4A"] as [string, string],
+  accent: ["#D4AF37", "#E5C76B"] as [string, string],
+  subtle: ["#4A4A4A", "#666666"] as [string, string],
 };
 
 export default function DashboardScreen() {
@@ -113,25 +107,25 @@ export default function DashboardScreen() {
       title: "Active Orders",
       value: stats.activeOrders.toString(),
       icon: "layers" as const,
-      gradientColors: GRADIENTS.coral,
+      gradientColors: GRADIENTS.primary,
     },
     {
       title: "Completed",
       value: stats.completedToday.toString(),
       icon: "check-circle" as const,
-      gradientColors: GRADIENTS.emerald,
+      gradientColors: GRADIENTS.accent,
     },
     {
       title: "Revenue",
       value: formatCurrency(stats.todayRevenue),
       icon: "trending-up" as const,
-      gradientColors: GRADIENTS.gold,
+      gradientColors: GRADIENTS.accent,
     },
     {
       title: "Pending",
       value: formatCurrency(stats.pendingPayments),
       icon: "clock" as const,
-      gradientColors: GRADIENTS.purple,
+      gradientColors: GRADIENTS.primaryLight,
     },
   ];
 
@@ -142,12 +136,12 @@ export default function DashboardScreen() {
     tab: keyof RootTabParamList;
     screen?: keyof MoreStackParamList;
   }> = [
-    { title: "Customers", icon: "users", gradientColors: GRADIENTS.rose, tab: "CustomersTab" },
-    { title: "Orders", icon: "package", gradientColors: GRADIENTS.blue, tab: "OrdersTab" },
-    { title: "Team", icon: "user-check", gradientColors: GRADIENTS.mint, tab: "EmployeesTab" },
-    { title: "Payments", icon: "credit-card", gradientColors: GRADIENTS.sunset, tab: "MoreTab", screen: "Payments" },
-    { title: "Analytics", icon: "pie-chart", gradientColors: GRADIENTS.ocean, tab: "MoreTab", screen: "Analytics" },
-    { title: "Settings", icon: "sliders", gradientColors: GRADIENTS.lavender, tab: "MoreTab", screen: "Settings" },
+    { title: "Customers", icon: "users", gradientColors: GRADIENTS.primary, tab: "CustomersTab" },
+    { title: "Orders", icon: "package", gradientColors: GRADIENTS.primaryLight, tab: "OrdersTab" },
+    { title: "Team", icon: "user-check", gradientColors: GRADIENTS.subtle, tab: "EmployeesTab" },
+    { title: "Payments", icon: "credit-card", gradientColors: GRADIENTS.accent, tab: "MoreTab", screen: "Payments" },
+    { title: "Analytics", icon: "pie-chart", gradientColors: GRADIENTS.primary, tab: "MoreTab", screen: "Analytics" },
+    { title: "Settings", icon: "sliders", gradientColors: GRADIENTS.primaryLight, tab: "MoreTab", screen: "Settings" },
   ];
 
   return (
