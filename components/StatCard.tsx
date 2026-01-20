@@ -1,17 +1,23 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle, StyleProp } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+  interpolate,
+} from "react-native-reanimated";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
-import { withOpacity } from "@/utils/colorUtils";
+import { Spacing, BorderRadius, Shadows, Colors } from "@/constants/theme";
 
 interface StatCardProps {
   title: string;
   value: string;
   icon: keyof typeof Feather.glyphMap;
-  color: string;
+  accentColor?: string;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
 }
@@ -20,68 +26,66 @@ export function StatCard({
   title,
   value,
   icon,
-  color,
+  accentColor,
   onPress,
   style,
 }: StatCardProps) {
   const { theme } = useTheme();
+  const accent = accentColor || Colors.light.accent;
 
   return (
     <AnimatedPressable
       onPress={onPress}
       style={[
         styles.container,
-        { backgroundColor: theme.backgroundDefault },
+        { 
+          backgroundColor: theme.backgroundDefault,
+        },
+        Shadows.level1,
         style,
       ]}
-      scaleValue={0.98}
-      opacityValue={0.95}
+      scaleValue={0.985}
+      opacityValue={0.92}
     >
-      <View
-        style={[
-          styles.gradientOverlay,
-          { backgroundColor: withOpacity(color, 0.05) },
-        ]}
-      />
-      <View style={[styles.iconContainer, { backgroundColor: withOpacity(color, 0.12) }]}>
-        <Feather name={icon} size={20} color={color} />
+      <View style={styles.header}>
+        <Feather name={icon} size={22} color={accent} />
       </View>
-      <ThemedText type="stat" style={[styles.value, { color: theme.text }]}>
-        {value}
-      </ThemedText>
-      <ThemedText type="small" style={{ color: theme.textSecondary }}>
-        {title}
-      </ThemedText>
+      <View style={styles.content}>
+        <ThemedText style={[styles.value, { color: theme.text }]}>
+          {value}
+        </ThemedText>
+        <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+          {title}
+        </ThemedText>
+      </View>
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    width: "48%",
-    flexGrow: 1,
-    padding: Spacing.lg,
+    flex: 1,
+    minWidth: "45%",
+    padding: Spacing.xl,
     borderRadius: BorderRadius.lg,
     overflow: "hidden",
-    position: "relative",
   },
-  gradientOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: BorderRadius.lg,
+  header: {
+    marginBottom: Spacing.lg,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.md,
+  content: {
+    gap: Spacing.xs,
   },
   value: {
-    marginBottom: Spacing.xs,
+    fontSize: 28,
+    fontWeight: "600",
+    letterSpacing: -0.5,
+    lineHeight: 34,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: "400",
+    lineHeight: 18,
+    textTransform: "capitalize",
   },
 });

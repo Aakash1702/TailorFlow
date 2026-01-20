@@ -1,17 +1,16 @@
 import React from "react";
-import { StyleSheet, ViewStyle, StyleProp } from "react-native";
+import { View, StyleSheet, ViewStyle, StyleProp } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { AnimatedPressable } from "./AnimatedPressable";
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Shadows, Colors } from "@/constants/theme";
 
 interface QuickActionTileProps {
   title: string;
   icon: keyof typeof Feather.glyphMap;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
-  iconColor?: string;
 }
 
 export function QuickActionTile({
@@ -19,10 +18,8 @@ export function QuickActionTile({
   icon,
   onPress,
   style,
-  iconColor,
 }: QuickActionTileProps) {
   const { theme } = useTheme();
-  const color = iconColor || theme.primary;
 
   return (
     <AnimatedPressable
@@ -31,15 +28,18 @@ export function QuickActionTile({
         styles.container,
         {
           backgroundColor: theme.backgroundDefault,
-          borderColor: theme.borderLight,
+          borderColor: theme.border,
         },
+        Shadows.level1,
         style,
       ]}
-      scaleValue={0.96}
-      opacityValue={0.9}
+      scaleValue={0.97}
+      opacityValue={0.92}
     >
-      <Feather name={icon} size={26} color={color} />
-      <ThemedText type="smallMedium" style={styles.title}>
+      <View style={[styles.iconWrapper, { backgroundColor: theme.backgroundSecondary }]}>
+        <Feather name={icon} size={22} color={theme.text} />
+      </View>
+      <ThemedText style={[styles.title, { color: theme.text }]}>
         {title}
       </ThemedText>
     </AnimatedPressable>
@@ -48,16 +48,26 @@ export function QuickActionTile({
 
 const styles = StyleSheet.create({
   container: {
-    width: "31%",
-    flexGrow: 1,
-    paddingVertical: Spacing.xl,
+    flex: 1,
+    minWidth: "30%",
+    paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: Spacing.md,
+  },
+  iconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
+    fontSize: 13,
+    fontWeight: "500",
     textAlign: "center",
+    lineHeight: 18,
   },
 });
