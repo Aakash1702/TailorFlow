@@ -245,8 +245,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      const timeout = (ms: number) => new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), ms)
+      );
+      
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const sessionPromise = supabase.auth.getSession();
+        const result = await Promise.race([
+          sessionPromise,
+          timeout(5000)
+        ]) as { data: { session: Session | null }, error: Error | null };
+        
+        const { data: { session }, error } = result;
         if (error) {
           console.log('[Auth] Session error:', error.message);
           setIsOnline(false);
@@ -258,8 +268,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setIsOnline(true);
         }
-      } catch (err) {
-        console.log('[Auth] Network error during init:', err);
+      } catch (err: any) {
+        console.log('[Auth] Init timeout or error:', err?.message || err);
         setIsOnline(false);
       } finally {
         setIsLoading(false);
