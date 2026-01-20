@@ -100,25 +100,25 @@ export default function DashboardScreen() {
       title: "Active Orders",
       value: stats.activeOrders.toString(),
       icon: "clock" as const,
-      color: theme.inProgress,
+      accentColor: theme.inProgress,
     },
     {
       title: "Completed Today",
       value: stats.completedToday.toString(),
       icon: "check-circle" as const,
-      color: theme.completed,
+      accentColor: theme.completed,
     },
     {
       title: "Today's Revenue",
       value: formatCurrency(stats.todayRevenue),
       icon: "trending-up" as const,
-      color: theme.primary,
+      accentColor: theme.accent,
     },
     {
       title: "Pending Payments",
       value: formatCurrency(stats.pendingPayments),
-      icon: "alert-circle" as const,
-      color: theme.pending,
+      icon: "dollar-sign" as const,
+      accentColor: theme.warning,
     },
   ];
 
@@ -153,7 +153,7 @@ export default function DashboardScreen() {
             title={stat.title}
             value={stat.value}
             icon={stat.icon}
-            color={stat.color}
+            accentColor={stat.accentColor}
           />
         ))}
       </Animated.View>

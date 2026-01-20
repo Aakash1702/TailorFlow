@@ -3,10 +3,9 @@ import { View, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Colors } from "@/constants/theme";
 import { ActivityItem as ActivityItemType } from "@/types";
 import { getRelativeTime } from "@/utils/storage";
-import { withOpacity } from "@/utils/colorUtils";
 
 interface ActivityItemProps {
   activity: ActivityItemType;
@@ -16,18 +15,18 @@ interface ActivityItemProps {
 export function ActivityListItem({ activity, isLast = false }: ActivityItemProps) {
   const { theme } = useTheme();
 
-  const getActivityIcon = (type: ActivityItemType["type"]) => {
+  const getActivityIcon = (type: ActivityItemType["type"]): keyof typeof Feather.glyphMap => {
     switch (type) {
       case "order_created":
-        return "plus-circle";
+        return "plus";
       case "order_updated":
-        return "edit";
+        return "edit-3";
       case "order_completed":
-        return "check-circle";
+        return "check";
       case "order_delivered":
-        return "truck";
+        return "package";
       case "payment_received":
-        return "dollar-sign";
+        return "credit-card";
       default:
         return "activity";
     }
@@ -36,15 +35,15 @@ export function ActivityListItem({ activity, isLast = false }: ActivityItemProps
   const getActivityColor = (type: ActivityItemType["type"]) => {
     switch (type) {
       case "order_created":
-        return theme.info;
+        return Colors.light.info;
       case "order_updated":
-        return theme.pending;
+        return Colors.light.warning;
       case "order_completed":
-        return theme.completed;
+        return Colors.light.success;
       case "order_delivered":
-        return theme.delivered;
+        return Colors.light.delivered;
       case "payment_received":
-        return theme.accent;
+        return Colors.light.accent;
       default:
         return theme.textSecondary;
     }
@@ -54,23 +53,18 @@ export function ActivityListItem({ activity, isLast = false }: ActivityItemProps
   const icon = getActivityIcon(activity.type);
 
   return (
-    <View
-      style={[
-        styles.container,
-        !isLast && {
-          borderBottomWidth: 1,
-          borderBottomColor: theme.borderLight,
-        },
-      ]}
-    >
-      <View style={[styles.iconContainer, { backgroundColor: withOpacity(color, 0.12) }]}>
-        <Feather name={icon} size={16} color={color} />
+    <View style={styles.container}>
+      <View style={styles.timelineContainer}>
+        <View style={[styles.iconCircle, { backgroundColor: color }]}>
+          <Feather name={icon} size={12} color="#FFFFFF" />
+        </View>
+        {!isLast && <View style={[styles.timelineLine, { backgroundColor: theme.border }]} />}
       </View>
       <View style={styles.content}>
-        <ThemedText type="body" numberOfLines={1}>
+        <ThemedText style={[styles.description, { color: theme.text }]} numberOfLines={2}>
           {activity.description}
         </ThemedText>
-        <ThemedText type="caption" style={{ color: theme.textSecondary }}>
+        <ThemedText style={[styles.timestamp, { color: theme.textSecondary }]}>
           {getRelativeTime(activity.timestamp)}
         </ThemedText>
       </View>
@@ -81,19 +75,39 @@ export function ActivityListItem({ activity, isLast = false }: ActivityItemProps
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    alignItems: "center",
-    padding: Spacing.lg,
-    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: BorderRadius.full,
+  timelineContainer: {
+    alignItems: "center",
+    marginRight: Spacing.md,
+  },
+  iconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    marginTop: Spacing.xs,
+    borderRadius: 1,
+  },
   content: {
     flex: 1,
-    gap: Spacing.xs,
+    paddingBottom: Spacing.sm,
+  },
+  description: {
+    fontSize: 14,
+    fontWeight: "400",
+    lineHeight: 20,
+    marginBottom: Spacing.xs,
+  },
+  timestamp: {
+    fontSize: 12,
+    fontWeight: "400",
+    lineHeight: 16,
   },
 });
